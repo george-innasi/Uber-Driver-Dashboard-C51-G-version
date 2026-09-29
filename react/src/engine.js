@@ -383,6 +383,18 @@ export function peerUsualFor(recs,refMs){
 }
 export function dayPartLabel(recs,refMs){const w=weightsFor(recs,refMs);return Object.keys(w).sort((a,b)=>w[b]-w[a]).map(k=>M.DAY_PARTS.find(p=>p.id===k).label.toLowerCase()).join(' + ');}
 
+/* B2: the $/hr strip on Home. This shift (once it has 30 min online), else the
+   last completed shift; compared with your usual and similar drivers for the
+   same day-part and weeks. */
+export function rateStrip(snap){
+  let sh=null,label;
+  if(snap.live&&agg(snap.live.recs).online>=RULES.minRateHours-1e-9){sh=snap.live;label='This shift';}
+  else{const c=completedShifts(snap)[0];if(c){sh=c;label=`Last shift (${DOW[new Date(c.s).getDay()]})`;}}
+  if(!sh)return null;
+  const a=agg(sh.recs),ref=sh.s;
+  return {label,shift:sh,a,epoh:a.epoh,usual:usualFor(snap,sh.recs,ref),similar:peerUsualFor(sh.recs,ref),part:dayPartLabel(sh.recs,ref)};
+}
+
 /* benchmark line under earnings per online hour */
 export function bench(snap,P,a,period){
   if(!a.online)return null;

@@ -409,9 +409,41 @@ const AccountStandingGrid = ({ snap }) => {
   );
 };
 
+/* B1-B3: earnings per online hour is the main number on Home */
+const METRIC_WHY = 'We track earnings per online hour, not total earnings. Total earnings rise with more hours; $/hr rises with better choices of zone, time and trips.';
+const InfoButton = ({ open, onClick, label = 'Why earnings per online hour' }) => (
+  <button type="button" onClick={onClick} aria-expanded={open} aria-label={label}
+    className={`grid h-5 w-5 place-items-center rounded-full border-[1.5px] border-blue-800 font-serif text-xs font-bold italic ${open ? 'bg-blue-800 text-white' : 'text-blue-800'}`}>i</button>
+);
+const RateStrip = ({ snap }) => {
+  const S = useMemo(() => E.rateStrip(snap), [snap]);
+  const [info, setInfo] = useState(false);
+  if (!S) return null;
+  const cells = [[S.label, S.epoh], ['Your usual', S.usual], ['Similar drivers', S.similar]];
+  return (
+    <section className="rounded-2xl bg-blue-50 p-4" aria-label="Earnings per online hour" data-strip="rate">
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-semibold text-blue-900">Earnings per online hour</span>
+        <InfoButton open={info} onClick={() => setInfo((v) => !v)} />
+      </div>
+      {info && <p className="mt-1.5 text-xs text-slate-700">{METRIC_WHY}</p>}
+      <div className="mt-2 grid grid-cols-[1.3fr_1fr_1fr] items-end gap-2">
+        {cells.map(([l, v], i) => (
+          <div key={l}>
+            <p className={`font-bold tabular-nums ${i === 0 ? 'text-3xl text-slate-900' : 'text-lg text-slate-700'}`}>{E.money(v)}</p>
+            <p className="text-[11px] text-slate-600">{l}</p>
+          </div>
+        ))}
+      </div>
+      <p className="mt-1.5 text-[11px] text-slate-600">Usual and similar drivers: {S.part} hours, median of the last 8 weeks.</p>
+    </section>
+  );
+};
+
 const PitStopView = (props) => (
   <div className="space-y-5">
     <DriverGreeting snap={props.snap} dec={props.dec} />
+    <RateStrip snap={props.snap} />
     <NowCard {...props} />
     <DemandNear snap={props.snap} dec={props.dec} />
     <HoursStrip snap={props.snap} dec={props.dec} />
@@ -555,7 +587,7 @@ const SplitRows = ({ S }) => {
   );
 };
 
-const EphBlock = ({ snap, dec, P, recs, a, period }) => {
+const EphBlock = ({ snap, dec, P, recs, a, period, after }) => {
   const [info, setInfo] = useState(false);
   const [sub, setSub] = useState('max');
   const pk = E.peakHour(recs);
@@ -567,7 +599,7 @@ const EphBlock = ({ snap, dec, P, recs, a, period }) => {
     <div className="space-y-3">
       <div className="rounded-2xl bg-blue-50 p-4">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-blue-800">Earnings per online hour</span>
+          <span className="text-sm font-semibold text-blue-800">Earnings per online hour · {P.label.split(',')[0]}</span>
           <button type="button" onClick={() => setInfo((v) => !v)} aria-expanded={info} aria-label="How this is calculated"
             className={`grid h-5 w-5 place-items-center rounded-full border-[1.5px] border-blue-800 font-serif text-xs font-bold italic ${info ? 'bg-blue-800 text-white' : 'text-blue-800'}`}>i</button>
         </div>
@@ -576,6 +608,7 @@ const EphBlock = ({ snap, dec, P, recs, a, period }) => {
         </p>
         {info && (
           <div className="mt-2 space-y-1 rounded-xl bg-white p-3 text-xs text-slate-600">
+            <p className="font-semibold text-slate-900">{METRIC_WHY}</p>
             <p className="font-semibold text-slate-900">How we calculate this</p>
             <p>Everything you earned (fares, surge and tips) divided by the time you were online, including time spent waiting for a trip.</p>
             {a.online > 0 && <p className="font-mono text-slate-900">{E.money(a.earn)} ÷ {E.fmtH(a.online)} online = {E.money(a.epoh)}/hr</p>}
@@ -590,6 +623,7 @@ const EphBlock = ({ snap, dec, P, recs, a, period }) => {
           </details>
         )}
       </div>
+      {after}
       <div className="grid grid-cols-2 gap-2">
         {[
           ['Hours online', a.online ? E.fmtH(a.online) : '–'],
@@ -714,9 +748,10 @@ const EarningsView = ({ snap, dec }) => {
       <TabTitle>Earnings</TabTitle>
       <section className="space-y-3">
         {!cool && <Segmented options={E.PERIODS} value={period} onChange={setPeriod} label="Period" />}
+        <EphBlock snap={snap} dec={dec} P={P} recs={recs} a={a} period={period} after={<>
         <div>
-          <p className="text-xs text-slate-500">{P.label}</p>
-          <p className="text-5xl font-bold tracking-tight tabular-nums">{E.money(a.earn)}</p>
+          <p className="text-xs text-slate-600">{P.label.split(',')[0]}, supporting context</p>
+          <p className="text-2xl font-bold tracking-tight tabular-nums">{E.money(a.earn)} <span className="text-sm font-medium text-slate-600">total</span></p>
           <div className="mt-2 flex flex-wrap gap-1.5 text-[11px] font-medium text-white">
             {[['bg-blue-700', E.money(a.base), 'fares'], ['bg-orange-700', E.money(a.surge), 'surge'], ['bg-emerald-700', E.money(a.tips), 'tips'], ['bg-slate-700', a.trips, 'trips']].map(([c, v, l]) => (
               <span key={l} className={`inline-flex items-baseline gap-1 rounded-full px-2.5 py-1 ${c}`}><b className="text-xs tabular-nums">{v}</b>{l}</span>
@@ -724,7 +759,7 @@ const EarningsView = ({ snap, dec }) => {
           </div>
         </div>
         <EarningsBars P={P} period={period} />
-        <EphBlock snap={snap} dec={dec} P={P} recs={recs} a={a} period={period} />
+        </>} />
       </section>
       <section>
         <SectionHead title="Why a shift landed where it did" />
