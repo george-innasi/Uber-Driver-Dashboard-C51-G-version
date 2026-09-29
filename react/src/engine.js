@@ -717,7 +717,7 @@ export function offerInsight(snap){
    normal for this hour (metrics.SIGNALS). This is not surge pricing.
    ===================================================================== */
 export const STATE_LABEL={go:'Opportunity',warn:'Take a break',calm:'On pace',cool:'Cool-down',start:'Demand building',gold:'Gold offer'};
-export const dmCol=v=>v>=.70?'#D92D3A':v>=.55?'#8E2A7E':v>=.40?'#D98E00':null;
+export const dmCol=v=>v>=.70?'#D92D3A':v>=.55?'#8E2A7E':v>=.40?'#975F00':null;
 export function liveDemand(snap,cur){
   const nd=new Date(snap.now), dow=nd.getDay(), h=hourOf(nd), L=snap.m.live||{};
   return ZONES.map(z=>{

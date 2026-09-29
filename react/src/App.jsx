@@ -37,7 +37,7 @@ const Card = ({ children, className = '' }) => (
 );
 
 const Eyebrow = ({ children }) => (
-  <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">{children}</p>
+  <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">{children}</p>
 );
 
 const Pill = ({ children, tone = 'peach' }) => {
@@ -57,7 +57,7 @@ const CHIP_TONES = {
   warn: 'bg-orange-50 text-orange-700 border-orange-200',
   neutral: 'bg-slate-100 text-slate-600 border-slate-200',
   blue: 'bg-blue-50 text-blue-700 border-blue-200',
-  gold: 'bg-amber-500 text-white border-amber-500',
+  gold: 'bg-amber-700 text-white border-amber-700',
   goldOutline: 'bg-white text-amber-800 border-amber-300',
 };
 const Chip = ({ children, tone = 'neutral' }) => (
@@ -71,11 +71,11 @@ const TabTitle = ({ children }) => <h1 className="pt-2 text-2xl font-bold tracki
 const SectionHead = ({ title, note }) => (
   <div className="mb-2 flex items-baseline justify-between gap-3 px-1">
     <h2 className="text-base font-bold">{title}</h2>
-    {note && <span className="text-right text-[11px] text-slate-500">{note}</span>}
+    {note && <span className="text-right text-[11px] text-slate-600">{note}</span>}
   </div>
 );
 
-const SubNote = ({ children, className = '' }) => <p className={`text-xs text-slate-500 ${className}`}>{children}</p>;
+const SubNote = ({ children, className = '' }) => <p className={`text-xs text-slate-600 ${className}`}>{children}</p>;
 
 const Segmented = ({ options, value, onChange, label, dark = false }) => (
   <div className="flex gap-1 rounded-full bg-slate-100 p-1" role="group" aria-label={label}>
@@ -83,7 +83,7 @@ const Segmented = ({ options, value, onChange, label, dark = false }) => (
       const on = value === k;
       return (
         <button key={k} type="button" aria-pressed={on} onClick={() => onChange(k)}
-          className={`min-h-[32px] flex-1 rounded-full text-xs font-semibold transition ${on ? (dark ? 'bg-slate-900 text-white' : 'bg-white text-slate-900 shadow-sm') : 'text-slate-500 hover:text-slate-700'}`}>
+          className={`min-h-[32px] flex-1 rounded-full text-xs font-semibold transition ${on ? (dark ? 'bg-slate-900 text-white' : 'bg-white text-slate-900 shadow-sm') : 'text-slate-600 hover:text-slate-700'}`}>
           {l}
         </button>
       );
@@ -143,7 +143,7 @@ const DriverGreeting = ({ snap, dec }) => {
         <h1 className="flex flex-wrap items-center gap-2 text-2xl font-bold tracking-tight">
           Hi, Alex {snap.m.gold && <Chip tone="gold"><StarIcon className="h-2.5 w-2.5" />Gold driver</Chip>}
         </h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-slate-600">
           {cool || !live ? 'Offline' : E.Z[dec.op.cur].name} • {E.DOW[nd.getDay()]} {E.MON[nd.getMonth()]} {nd.getDate()} • {E.fmtClock(nd)}
         </p>
       </div>
@@ -194,7 +194,7 @@ const GoOffer = ({ snap, dec, ui, setUi }) => {
   const setResp = (r) => setUi((u) => ({ ...u, resp: { ...u.resp, [mid]: r }, deadline: r ? u.deadline : { ...u.deadline, [mid]: undefined } }));
   const leftS = deadline ? Math.max(0, Math.ceil((deadline - Date.now()) / 1000)) : OFFER_SECS;
   useEffect(() => { if (!resp && deadline && leftS <= 0) setResp('expired'); });
-  const Undo = ({ label = 'Undo' }) => <button type="button" onClick={() => setResp(undefined)} className="text-xs text-slate-500 underline">{label}</button>;
+  const Undo = ({ label = 'Undo' }) => <button type="button" onClick={() => setResp(undefined)} className="text-xs text-slate-600 underline">{label}</button>;
   if (resp === 'yes') return (
     <NowShell tone="go" chip={<><ArrowUpIcon className="h-3 w-3" />Accepted</>} chipTone="go">
       <p className="flex items-center gap-2 text-xl font-bold"><ArrowUpIcon className="h-6 w-6 text-emerald-700" />On your way to {zn}</p>
@@ -213,18 +213,17 @@ const GoOffer = ({ snap, dec, ui, setUi }) => {
     <section className="space-y-1.5 rounded-2xl border-[1.5px] border-emerald-500 bg-emerald-50 p-3.5" aria-live="polite" aria-label="Right now">
       <p className="text-xs font-semibold text-emerald-800">We found an opportunity for you</p>
       <p className="flex items-center gap-2 text-lg font-bold"><ArrowUpIcon className="h-5 w-5 text-emerald-700" />Head to {zn}</p>
-      <p className="text-sm font-medium text-emerald-800">{b.mins} min drive</p>
+      <p className="text-sm font-medium text-emerald-900">{b.mins} min · +{E.money(b.gainPerHr)}/hr after the drive</p>
       <div className="grid grid-cols-2 gap-2">
-        <div className="rounded-xl bg-white px-3 py-2"><p className="text-[11px] text-slate-500">Stay in {here}</p><p className="text-lg font-bold tabular-nums">{E.money(op.stay / op.H, 0)}/hr</p></div>
-        <div className="rounded-xl border-[1.5px] border-emerald-500 bg-white px-3 py-2"><p className="text-[11px] text-slate-500">Go to {zn}</p><p className="text-lg font-bold tabular-nums text-emerald-700">{E.money(b.movePerHr, 0)}/hr</p></div>
+        <div className="rounded-xl bg-white px-3 py-2"><p className="text-[11px] text-slate-600">Stay in {here}</p><p className="text-lg font-bold tabular-nums">{E.money(op.stay / op.H, 0)}/hr</p></div>
+        <div className="rounded-xl border-[1.5px] border-emerald-500 bg-white px-3 py-2"><p className="text-[11px] text-slate-600">Go to {zn}</p><p className="text-lg font-bold tabular-nums text-emerald-700">{E.money(b.movePerHr, 0)}/hr</p></div>
       </div>
-      <div className="flex justify-between text-[11px] text-slate-500"><span>Same {op.H} hrs, drive unpaid</span><b className="text-sm text-emerald-700">+{E.money(b.gainPerHr)}/hr after the drive</b></div>
       <div className="grid grid-cols-2 gap-2">
         <button type="button" onClick={() => setResp('no')} className="min-h-[40px] rounded-xl border-[1.5px] border-emerald-500 bg-white text-sm font-semibold">Decline</button>
         <button type="button" onClick={() => setResp('yes')} className="min-h-[40px] rounded-xl bg-emerald-600 text-sm font-semibold text-white">Accept</button>
       </div>
       <div className="h-1.5 overflow-hidden rounded bg-white"><div className={`h-full ${leftS <= 30 ? 'bg-orange-500' : 'bg-emerald-500'}`} style={{ width: `${(100 * leftS) / OFFER_SECS}%` }} /></div>
-      <div className="flex justify-between text-[11px] text-slate-500"><span>Offer expires in</span><b className="font-mono text-slate-900">{Math.floor(leftS / 60)}:{String(leftS % 60).padStart(2, '0')}</b></div>
+      <div className="flex justify-between text-[11px] text-slate-600"><span>Offer expires in</span><b className="font-mono text-slate-900">{Math.floor(leftS / 60)}:{String(leftS % 60).padStart(2, '0')}</b></div>
     </section>
   );
 };
@@ -240,7 +239,7 @@ const NowCard = ({ snap, dec, claims, onClaim, ui, setUi }) => {
   const { state, wb, op } = dec;
   if (state === 'cool') return <CoolCard snap={snap} dec={dec} />;
   if (state === 'start') {
-    const on = !!ui.online[snap.m.id], D = E.demandSummary(snap, op.cur), t = D.near[0];
+    const on = !!ui.online[snap.m.id], D = E.demandSummary(snap, op.cur), t = D.near[0], tg = t && op.list.find((o) => o.zone === t.z);
     if (dec.overWeek) return (
       <NowShell tone="calm" chip={<><CheckCircleIcon className="h-3 w-3" />Usual week reached</>} chipTone="neutral">
         <p className="text-lg font-bold">You've driven your usual week</p>
@@ -250,7 +249,7 @@ const NowCard = ({ snap, dec, claims, onClaim, ui, setUi }) => {
     return (
       <NowShell tone="start" chip={<><TrendIcon className="h-3 w-3" />Demand building</>} chipTone="blue">
         <h2 className="text-lg font-bold leading-snug">Demand is building nearby</h2>
-        <p className="text-sm leading-relaxed text-slate-600">{D.txt}{t ? ` ${E.Z[t.z].name} is ${t.mins} min away, at ${E.pct(t.lv)} demand against ${E.pct(t.d0)} normal.` : ''}</p>
+        <p className="text-sm font-medium text-slate-800" data-line="top">{t ? `${E.Z[t.z].name} demand ${E.pct(t.lv)} vs ${E.pct(t.d0)} normal · ${t.mins} min${tg ? ` · ${tg.gainPerHr >= 0 ? '+' : '−'}${E.money(Math.abs(tg.gainPerHr))}/hr after the drive` : ''}` : D.txt}</p>
         <button type="button" onClick={() => setUi((u) => ({ ...u, online: { ...u.online, [snap.m.id]: !on } }))}
           className={`w-full rounded-xl py-3 text-sm font-semibold transition active:scale-[0.98] ${on ? 'border-[1.5px] border-emerald-500 bg-emerald-50 text-emerald-800' : 'bg-slate-900 text-white hover:bg-slate-800'}`}>
           {on ? `You are online in ${E.Z[op.cur].name} · tap to go offline` : 'Go online'}
@@ -265,10 +264,10 @@ const NowCard = ({ snap, dec, claims, onClaim, ui, setUi }) => {
         <p className="flex items-center gap-2 text-xl font-bold"><StarIcon className="h-5 w-5 text-amber-500" />{e.name}</p>
         <p className="text-sm font-medium text-amber-800">{e.venue} · {E.fmtHour(e.a)} – {E.fmtHour(e.b)} pickups</p>
         <div className="grid grid-cols-2 gap-2">
-          <div className="rounded-xl bg-white px-3 py-2"><p className="text-[11px] text-slate-500">Typical in {E.Z[e.zone].name}</p><p className="text-xl font-bold tabular-nums">{E.money(g.typical, 0)}<span className="text-xs text-slate-500">/hr</span></p></div>
-          <div className="rounded-xl border-[1.5px] border-amber-500 bg-white px-3 py-2"><p className="text-[11px] text-slate-500">Gold slot</p><p className="text-xl font-bold tabular-nums text-amber-800">{E.money(g.goldRate, 0)}<span className="text-xs">/hr</span></p></div>
+          <div className="rounded-xl bg-white px-3 py-2"><p className="text-[11px] text-slate-600">Typical in {E.Z[e.zone].name}</p><p className="text-xl font-bold tabular-nums">{E.money(g.typical, 0)}<span className="text-xs text-slate-600">/hr</span></p></div>
+          <div className="rounded-xl border-[1.5px] border-amber-500 bg-white px-3 py-2"><p className="text-[11px] text-slate-600">Gold slot</p><p className="text-xl font-bold tabular-nums text-amber-800">{E.money(g.goldRate, 0)}<span className="text-xs">/hr</span></p></div>
         </div>
-        <div className="flex items-center justify-between gap-2 text-[11px] text-slate-500">
+        <div className="flex items-center justify-between gap-2 text-[11px] text-slate-600">
           <span>{Math.round(e.prem * 100)}% premium on fares · {e.left - (st === 'yes' ? 1 : 0)} of {e.of} slots left</span>
           <EventButtons id={e.id} st={st} block="" onClaim={onClaim} />
         </div>
@@ -304,7 +303,7 @@ const DemandMap = ({ cur, live }) => {
   return (
     <svg viewBox="0 0 340 210" className="block h-auto w-full" role="img" aria-label="Live city demand map">
       <defs>
-        {['#D92D3A', '#8E2A7E', '#D98E00'].map((c, i) => (
+        {['#D92D3A', '#8E2A7E', '#975F00'].map((c, i) => (
           <radialGradient key={c} id={`dg${i}`}><stop offset="0" stopColor={c} stopOpacity=".6" /><stop offset="1" stopColor={c} stopOpacity="0" /></radialGradient>
         ))}
       </defs>
@@ -334,13 +333,13 @@ const DemandNear = ({ snap, dec }) => {
       {dec.state !== 'start' && <p className="mb-2 px-1 text-sm text-slate-600">{D.txt}</p>}
       <Card className="space-y-2 p-3">
         <div className="overflow-hidden rounded-xl border border-slate-100"><DemandMap cur={cur} live={D.live} /></div>
-        <div className="flex items-center gap-2 text-[11px] text-slate-500">
-          <span>Demand: normal</span><i className="block h-1.5 w-14 rounded bg-gradient-to-r from-[#D98E00] via-[#8E2A7E] to-[#D92D3A]" /><span>high</span><span className="ml-auto">↑ above normal for this hour</span>
+        <div className="flex items-center gap-2 text-[11px] text-slate-600">
+          <span>Demand: normal</span><i className="block h-1.5 w-14 rounded bg-gradient-to-r from-[#975F00] via-[#8E2A7E] to-[#D92D3A]" /><span>high</span><span className="ml-auto">↑ above normal for this hour</span>
         </div>
         {D.near.slice(0, 3).map((x) => (
-          <div key={x.z} className="grid grid-cols-[1fr_auto] gap-x-3 border-t border-slate-100 py-2 text-xs text-slate-500">
-            <span><b className="text-sm text-slate-900">{E.Z[x.z].name}</b>{x.z === cur && <span className="ml-1.5 rounded-full bg-blue-600 px-1.5 py-px text-[9px] font-semibold uppercase text-white">You're here</span>}<br />{x.z === cur ? 'Your current area' : `${x.mins} min · ${E.km(x.mins)} km away`}</span>
-            <span className="text-right font-semibold tabular-nums text-slate-900">{E.pct(x.d0)} → {E.pct(x.lv)} demand<br /><span className="font-medium text-slate-500">{E.money(x.e0, 0)} → {E.money(x.e, 0)}/hr</span></span>
+          <div key={x.z} className="grid grid-cols-[1fr_auto] gap-x-3 border-t border-slate-100 py-2 text-xs text-slate-600">
+            <span><b className="text-sm text-slate-900">{E.Z[x.z].name}</b>{x.z === cur && <span className="ml-1.5 rounded-full bg-blue-600 px-1.5 py-px text-[9px] font-semibold uppercase text-white">You're here</span>}<br />{x.z === cur ? 'Your current area' : `${x.mins} min · ${E.km(x.mins)} km away`}<br /><span className={`font-semibold ${x.above ? 'text-rose-800' : 'text-slate-600'}`}>{x.above ? '↑ Demand above normal' : 'Demand normal'} · {x.surgeOn ? `Surge pricing ${x.surge.toFixed(1)}×` : 'No surge pricing'}</span></span>
+            <span className="text-right font-semibold tabular-nums text-slate-900">{E.pct(x.d0)} → {E.pct(x.lv)} demand<br /><span className="font-medium text-slate-600">{E.money(x.e0, 0)} → {E.money(x.e, 0)}/hr</span></span>
           </div>
         ))}
       </Card>
@@ -355,12 +354,12 @@ const HoursStrip = ({ snap, dec }) => {
   return (
     <Card>
       <Eyebrow>Hours since last rest</Eyebrow>
-      <p className="mt-2 text-2xl font-bold">{E.fmtH(h)} <span className="text-base font-medium text-slate-500">of {M}h</span></p>
+      <p className="mt-2 text-2xl font-bold">{E.fmtH(h)} <span className="text-base font-medium text-slate-600">of {M}h</span></p>
       {Math.abs(todayH - du.hours) > 0.05 && <p className="text-xs text-slate-600">Online today: {E.fmtH(todayH)}</p>}
       <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-200" role="progressbar" aria-valuenow={h} aria-valuemin={0} aria-valuemax={M}>
         <div className={`h-full rounded-full ${tone === 'max' ? 'bg-red-600' : tone === 'near' ? 'bg-orange-500' : 'bg-blue-600'}`} style={{ width: `${(100 * h) / M}%` }} />
       </div>
-      <div className="mt-2 flex justify-between text-xs text-slate-500">
+      <div className="mt-2 flex justify-between text-xs text-slate-600">
         {du.capped ? (<><span className="font-semibold text-red-700">Limit reached</span><span>Online again {E.whenLabel(snap, du.until)}</span></>)
           : (<><span className={tone ? 'font-semibold text-orange-700' : ''}>{du.hours ? `${E.fmtH(left)} left` : `Full ${M}h available`}</span><span>{R.restHrs}h rest after {M}h</span></>)}
       </div>
@@ -418,7 +417,7 @@ const AccountStandingGrid = ({ snap }) => {
                   </div>
                   <p className="text-xs font-medium text-slate-800">{t.label}</p>
                   <p className="mt-2 text-[11px] text-slate-600">{t.count}</p>
-                  <div className="mt-1.5 space-y-0.5 border-t border-black/5 pt-1.5 text-[11px] text-slate-500">
+                  <div className="mt-1.5 space-y-0.5 border-t border-black/5 pt-1.5 text-[11px] text-slate-600">
                     <p className="flex justify-between gap-2"><span>Goal</span><b className="font-semibold text-slate-700" data-threshold={t.th}>{t.goal}</b></p>
                     <p className="flex justify-between gap-2"><span>Similar drivers</span><b className="font-semibold text-slate-700">{t.peer}</b></p>
                   </div>
@@ -505,27 +504,29 @@ const GuardrailBar = ({ hours }) => {
   );
 };
 
-const TrafficView = ({ snap, dec }) => {
+/* E2: the red-light screen. One number ($/hr), one action, one status (hours
+   since last rest). Large, high-contrast text. The simulated speed is above
+   15 km/h, so Navigate's secondary details (distance, route) stay hidden. */
+const TrafficView = ({ snap, dec, moving = true }) => {
   const V = E.drivingView(snap, dec);
   if (!V) return null;
   const { number, action, status } = V;
   return (
-    <div className="flex h-full flex-col" data-screen="driving">
+    <div className="flex h-full flex-col bg-white" data-screen="driving">
       <GuardrailBar hours={status.hours} />
       <div className="flex flex-1 flex-col items-center justify-center text-center">
-        <p className="text-6xl font-bold tracking-tight tabular-nums">{number.value == null ? '–' : `${E.money(number.value, 0)}/hr`}</p>
-        <p className="mt-2 text-base font-medium text-slate-600">{number.label}</p>
-        <p className="mt-4 text-base font-semibold text-slate-700">{E.fmtH(status.hours)} {status.label}</p>
+        <p className="text-7xl font-extrabold tracking-tight tabular-nums text-slate-950" data-driving="number">{number.value == null ? '–' : `${E.money(number.value, 0)}/hr`}</p>
+        <p className="mt-2 text-lg font-semibold text-slate-800">{number.label}</p>
       </div>
-      <section className={`flex min-h-[220px] flex-col justify-between gap-3 rounded-2xl p-5 text-white shadow-sm ${action.kind === 'gold' ? 'bg-amber-700' : 'bg-blue-700'}`}>
+      <section className={`flex flex-col gap-4 rounded-2xl p-5 text-white shadow-sm ${action.kind === 'gold' ? 'bg-amber-900' : action.kind === 'rest' ? 'bg-slate-900' : 'bg-blue-900'}`} data-driving="action">
         <div className="flex items-center gap-4">
-          <ArrowUpRightIcon className="h-16 w-16 shrink-0" />
-          <p className="text-2xl font-bold leading-tight">{action.title}{action.mins ? ` · ${action.mins} min` : ''}</p>
+          <ArrowUpRightIcon className="h-14 w-14 shrink-0" />
+          <p className="text-3xl font-extrabold leading-tight">{action.title}{action.mins ? ` · ${action.mins} min` : ''}</p>
         </div>
-        {action.detail && <p className="text-lg font-medium text-white/90">{action.detail}</p>}
-        <p className="text-lg font-medium text-white/90">{action.mins ? `${action.mins} min · ${action.km} km from ${E.Z[V.from].name}` : ''}</p>
-        <button type="button" className="h-14 w-full rounded-xl bg-white text-lg font-bold text-slate-900 active:scale-[0.98]">Navigate</button>
+        <button type="button" aria-describedby="nav-details" className="h-16 w-full rounded-xl bg-white text-xl font-extrabold text-slate-950 active:scale-[0.98]">Navigate</button>
+        <p id="nav-details" hidden={moving} className="text-base text-white">{action.detail ? `${action.detail} · ` : ''}{action.km ? `${action.km} km from ${E.Z[V.from].name}` : ''}</p>
       </section>
+      <p className="mt-4 text-center text-xl font-bold text-slate-950" data-driving="status">{E.fmtH(status.hours)} {status.label}</p>
     </div>
   );
 };
@@ -574,7 +575,7 @@ const EarningsBars = ({ P, period }) => {
       </svg>
       <Readout item={tip} hint="Tap a bar for hours and earnings per hour." />
       <details className="text-xs text-slate-600">
-        <summary className="cursor-pointer py-1 text-slate-500">Show as table</summary>
+        <summary className="cursor-pointer py-1 text-slate-600">Show as table</summary>
         <table className="mt-1 w-full tabular-nums">
           <thead><tr className="text-slate-900">{['Period', 'Earned', 'Hours', '$/hr'].map((h, i) => <th key={h} className={`border-b border-slate-100 px-1.5 py-1 font-semibold ${i ? 'text-right' : 'text-left'}`}>{h}</th>)}</tr></thead>
           <tbody>
@@ -641,7 +642,7 @@ const EphBlock = ({ snap, dec, P, recs, a, period, after }) => {
             className={`grid h-5 w-5 place-items-center rounded-full border-[1.5px] border-blue-800 font-serif text-xs font-bold italic ${info ? 'bg-blue-800 text-white' : 'text-blue-800'}`}>i</button>
         </div>
         <p className="mt-1 text-4xl font-bold tracking-tight tabular-nums">
-          {a.online ? E.money(a.epoh) : '–'}{a.online > 0 && <span className="text-base font-medium text-slate-500"> /hr</span>}
+          {a.online ? E.money(a.epoh) : '–'}{a.online > 0 && <span className="text-base font-medium text-slate-600"> /hr</span>}
         </p>
         {info && (
           <div className="mt-2 space-y-1 rounded-xl bg-white p-3 text-xs text-slate-600">
@@ -664,12 +665,12 @@ const EphBlock = ({ snap, dec, P, recs, a, period, after }) => {
       <div className="grid grid-cols-2 gap-2">
         {[
           ['Hours online', a.online ? E.fmtH(a.online) : '–'],
-          ['Rides accepted', <>{a.accepted} <span className="text-xs font-medium text-slate-500">of {a.offers} offers</span></>],
+          ['Rides accepted', <>{a.accepted} <span className="text-xs font-medium text-slate-600">of {a.offers} offers</span></>],
           ['Acceptance rate', a.offers ? E.pct(a.acc) : '–'],
-          ['Km driven', <>{Math.round(a.km)} <span className="text-xs font-medium text-slate-500">km</span></>],
+          ['Km driven', <>{Math.round(a.km)} <span className="text-xs font-medium text-slate-600">km</span></>],
         ].map(([k, v]) => (
           <div key={k} className="rounded-xl bg-slate-100 px-3 py-2">
-            <p className="text-[11px] text-slate-500">{k}</p>
+            <p className="text-[11px] text-slate-600">{k}</p>
             <p className="text-lg font-bold tabular-nums">{v}</p>
           </div>
         ))}
@@ -678,7 +679,7 @@ const EphBlock = ({ snap, dec, P, recs, a, period, after }) => {
         <div className="grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1" role="group" aria-label="Earnings per hour detail">
           {[['max', 'Maximize earnings'], ['perf', "How you've performed"]].map(([k, l]) => (
             <button key={k} type="button" aria-pressed={sub === k} onClick={() => setSub(k)}
-              className={`min-h-[38px] rounded-lg text-xs font-semibold ${sub === k ? 'bg-blue-600 text-white' : 'text-slate-500'}`}>{l}</button>
+              className={`min-h-[38px] rounded-lg text-xs font-semibold ${sub === k ? 'bg-blue-600 text-white' : 'text-slate-600'}`}>{l}</button>
           ))}
         </div>
       )}
@@ -724,7 +725,7 @@ const Performed = ({ snap, P, recs, a, period }) => {
       <SubNote>Compared with the top 20% of earners ({R.n} drivers) in {R.zoneNames}, {R.desc}.</SubNote>
       <table className="w-full text-xs tabular-nums">
         <thead>
-          <tr className="text-[11px] text-slate-500">
+          <tr className="text-[11px] text-slate-600">
             <th className="pb-1.5 text-left font-semibold">Metric</th><th className="pb-1.5 text-right font-semibold">You</th><th className="pb-1.5 text-right font-semibold">Top earners</th>
           </tr>
         </thead>
@@ -810,7 +811,7 @@ const EarningsView = ({ snap, dec }) => {
 /* OPPORTUNITIES TAB                                                   */
 /* ================================================================== */
 const CITY_XY = { dt: [172, 100], mt: [108, 150], ap: [285, 45], un: [48, 178], wf: [255, 150], ns: [112, 44] };
-const surgeCol = (m) => (m >= 1.5 ? '#D92D3A' : m >= 1.25 ? '#8E2A7E' : '#D98E00');
+const surgeCol = (m) => (m >= 1.5 ? '#D92D3A' : m >= 1.25 ? '#8E2A7E' : '#975F00');
 
 const CityBase = () => (
   <>
@@ -840,7 +841,7 @@ const SurgingNow = ({ snap, cur }) => {
       <Card className="overflow-hidden p-0">
         <svg viewBox="0 0 340 210" className="block h-auto w-full" role="img" aria-label="Map of areas with surge pricing on now">
           <defs>
-            {['#D92D3A', '#8E2A7E', '#D98E00'].map((c, i) => (
+            {['#D92D3A', '#8E2A7E', '#975F00'].map((c, i) => (
               <radialGradient key={c} id={`sg${i}`}><stop offset="0" stopColor={c} stopOpacity=".55" /><stop offset="1" stopColor={c} stopOpacity="0" /></radialGradient>
             ))}
           </defs>
@@ -862,9 +863,9 @@ const SurgingNow = ({ snap, cur }) => {
         {S.hot.length > 0 && (
           <ul className="divide-y divide-slate-100 px-4 py-1">
             {S.hot.map((x) => (
-              <li key={x.z} className="flex items-center justify-between gap-3 py-2 text-xs text-slate-500">
+              <li key={x.z} className="flex items-center justify-between gap-3 py-2 text-xs text-slate-600">
                 <span><b className="text-sm text-slate-900">{E.Z[x.z].name}</b><br />{x.z === cur ? 'Your current area' : `${E.travel(cur, x.z)} min · ${E.km(E.travel(cur, x.z))} km away`}</span>
-                <span className="text-right font-semibold tabular-nums text-slate-900">{x.m.toFixed(1)}×<br /><span className="font-medium text-slate-500">+{E.money(E.Z[x.z].fare * (x.m - 1))}/trip</span></span>
+                <span className="text-right font-semibold tabular-nums text-slate-900">{x.m.toFixed(1)}×<br /><span className="font-medium text-slate-600">+{E.money(E.Z[x.z].fare * (x.m - 1))}/trip</span></span>
               </li>
             ))}
           </ul>
@@ -892,10 +893,10 @@ const MiniMap = ({ best, cur, gold }) => (
 );
 
 const EventButtons = ({ id, st, block, onClaim }) => {
-  if (block) return <span className="text-[11px] text-slate-500">{block}</span>;
+  if (block) return <span className="text-[11px] text-slate-600">{block}</span>;
   return (
     <div className="flex items-center gap-2" role="group" aria-label="Respond to event slot">
-      {st && <span className={`text-xs font-semibold ${st === 'yes' ? 'text-emerald-700' : 'text-slate-500'}`}>{st === 'yes' ? 'Accepted' : 'Declined'}</span>}
+      {st && <span className={`text-xs font-semibold ${st === 'yes' ? 'text-emerald-700' : 'text-slate-600'}`}>{st === 'yes' ? 'Accepted' : 'Declined'}</span>}
       <button type="button" aria-label="Accept slot" aria-pressed={st === 'yes'} onClick={() => onClaim(id, 'yes')}
         className={`grid h-10 w-12 place-items-center rounded-lg bg-emerald-600 text-white ${st === 'no' ? 'opacity-40' : ''}`}><CheckIcon className="h-5 w-5" /></button>
       <button type="button" aria-label="Decline slot" aria-pressed={st === 'no'} onClick={() => onClaim(id, 'no')}
@@ -936,7 +937,7 @@ const OptionsNearYou = ({ snap, dec, claims, onClaim }) => {
             return (
               <button key={i} type="button" aria-pressed={on} onClick={() => setDayIdx(i)}
                 className={`flex flex-col items-center gap-px border-b-[3px] pb-2 pt-1 ${on ? 'border-slate-900' : 'border-transparent'}`}>
-                <span className={`text-[11px] ${on ? 'text-slate-900' : 'text-slate-500'}`}>{E.DOW[d.getDay()][0]}</span>
+                <span className={`text-[11px] ${on ? 'text-slate-900' : 'text-slate-600'}`}>{E.DOW[d.getDay()][0]}</span>
                 <b className={`text-sm ${isT ? 'text-blue-700' : ''}`}>{d.getDate()}</b>
               </button>
             );
@@ -947,7 +948,7 @@ const OptionsNearYou = ({ snap, dec, claims, onClaim }) => {
           <div className="flex flex-col items-center gap-2 px-6 py-10 text-center">
             <span className="grid h-11 w-11 place-items-center rounded-full bg-slate-100 text-slate-600"><LockIcon className="h-5 w-5" /></span>
             <p className="text-base font-semibold">You're not eligible to see options for today</p>
-            <p className="text-xs text-slate-500">You're resting until <b className="text-slate-700">{O.until}</b>. Pick another day above to see its options.</p>
+            <p className="text-xs text-slate-600">You're resting until <b className="text-slate-700">{O.until}</b>. Pick another day above to see its options.</p>
             <button type="button" onClick={() => setDayIdx(1)} className="mt-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white">See tomorrow's options</button>
           </div>
         ) : (<>
@@ -966,19 +967,19 @@ const OptionsNearYou = ({ snap, dec, claims, onClaim }) => {
               <div className="grid grid-cols-[1fr_auto] items-center gap-x-3 rounded-xl bg-blue-50 px-3 py-2.5 shadow-[inset_3px_0_0_#2563eb]">
                 <div>
                   <p className="flex items-center gap-1.5 text-sm font-semibold text-blue-800">{E.Z[cur].name}<span className="rounded-full bg-blue-600 px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide text-white">You're here</span></p>
-                  <p className="text-xs text-blue-700/80">Stay put · about {E.money(O.rightNow.here, 0)}/hr right now</p>
+                  <p className="text-xs text-blue-800">Stay put · about {E.money(O.rightNow.here, 0)}/hr right now</p>
                 </div>
-                <p className="text-right text-sm font-semibold tabular-nums">{E.money(O.rightNow.stay, 0)}<span className="block text-[11px] font-medium text-slate-500">next {O.rightNow.H} hrs</span></p>
+                <p className="text-right text-sm font-semibold tabular-nums">{E.money(O.rightNow.stay, 0)}<span className="block text-[11px] font-medium text-slate-600">next {O.rightNow.H} hrs</span></p>
               </div>
               {O.rightNow.list.map((o) => (
                 <div key={o.zone} className="grid grid-cols-[1fr_auto] items-center gap-x-3 border-b border-slate-100 px-3 py-2.5 last:border-0">
                   <div>
-                    <p className={`flex items-center gap-1.5 text-sm font-semibold ${o.dem ? 'text-slate-400' : ''}`}>{E.Z[o.zone].name}{o.best && <span className="rounded-full bg-emerald-600 px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide text-white">Best next</span>}</p>
-                    <p className="text-xs text-slate-500">{o.mins} min · {E.km(o.mins)} km away · {o.reason}</p>
+                    <p className={`flex items-center gap-1.5 text-sm font-semibold ${o.dem ? 'text-slate-600 line-through' : ''}`}>{E.Z[o.zone].name}{o.best && <span className="rounded-full bg-emerald-700 px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide text-white">Best next</span>}</p>
+                    <p className="text-xs text-slate-600">{o.mins} min · {E.km(o.mins)} km away · {o.reason}</p>
                     {o.dem && o.good && <div className="mt-1"><Chip tone="warn">Late in a long shift</Chip></div>}
                   </div>
-                  <p className={`text-right text-sm font-semibold tabular-nums ${o.good && !o.dem ? 'text-emerald-700' : o.dem ? 'text-slate-400' : ''}`}>
-                    {o.gainPerHr > 0.005 ? '+' : o.gainPerHr < -0.005 ? '−' : '±'}{E.money(Math.abs(o.gainPerHr))}/hr<span className="block text-[11px] font-medium text-slate-500">after the drive</span>
+                  <p className={`text-right text-sm font-semibold tabular-nums ${o.good && !o.dem ? 'text-emerald-700' : o.dem ? 'text-slate-600' : ''}`}>
+                    {o.gainPerHr > 0.005 ? '+' : o.gainPerHr < -0.005 ? '−' : '±'}{E.money(Math.abs(o.gainPerHr))}/hr<span className="block text-[11px] font-medium text-slate-600">after the drive</span>
                   </p>
                 </div>
               ))}
@@ -987,7 +988,7 @@ const OptionsNearYou = ({ snap, dec, claims, onClaim }) => {
         )}
 
         <div className="pb-2">
-          {!O.items.length && <p className="px-4 py-3 text-sm text-slate-500">No more time windows today</p>}
+          {!O.items.length && <p className="px-4 py-3 text-sm text-slate-600">No more time windows today</p>}
           {O.items.map((it) => it.kind === 'window' ? (
             <div key={`w${it.a}`} className={`flex gap-3 border-b border-slate-100 px-4 py-3 last:border-0 ${it.now ? 'bg-blue-50' : ''}`}>
               <div className="min-w-0 flex-1">
@@ -1017,7 +1018,7 @@ const OptionsNearYou = ({ snap, dec, claims, onClaim }) => {
                 <MiniMap best={it.e.zone} cur={cur} gold />
               </div>
               <div className="mt-2 flex items-center justify-between gap-2">
-                <span className="text-[11px] text-slate-500">{it.leftN} of {it.e.of} slots left</span>
+                <span className="text-[11px] text-slate-600">{it.leftN} of {it.e.of} slots left</span>
                 <EventButtons id={it.e.id} st={it.st} block={it.block} onClaim={onClaim} />
               </div>
               {!it.block && <div className="mt-2"><SafetyNote S={it.safety} /></div>}
@@ -1115,6 +1116,7 @@ const WhereWhenHeat = ({ snap }) => {
 const OpportunitiesView = ({ snap, dec, claims, onClaim }) => (
   <div className="space-y-6">
     <TabTitle>Opportunities</TabTitle>
+    <p className="-mt-4 text-sm font-medium text-slate-600" data-caption="parked">For planning while parked.</p>
     {dec.state !== 'cool' && <SurgingNow snap={snap} cur={dec.op.cur} />}
     <OptionsNearYou snap={snap} dec={dec} claims={claims} onClaim={onClaim} />
     <SurgeByDay snap={snap} cur={dec.op.cur} />
@@ -1190,8 +1192,8 @@ const YourWeek = ({ snap, dec }) => {
         </svg>
         <SubNote>Usual = the middle half of your last 8 weeks.{Wk.over ? ' You are well past it this week.' : ''}</SubNote>
         <div className="grid grid-cols-2 gap-3">
-          <div><p className="text-[11px] text-slate-500">Days in a row</p><p className="text-base font-bold">{Wk.cons}</p></div>
-          <div><p className="text-[11px] text-slate-500">After 10 PM this week</p><p className="text-base font-bold">{Wk.lateTot ? E.fmtH(Wk.lateTot) : 'None'}</p></div>
+          <div><p className="text-[11px] text-slate-600">Days in a row</p><p className="text-base font-bold">{Wk.cons}</p></div>
+          <div><p className="text-[11px] text-slate-600">After 10 PM this week</p><p className="text-base font-bold">{Wk.lateTot ? E.fmtH(Wk.lateTot) : 'None'}</p></div>
         </div>
       </Card>
     </section>
@@ -1289,7 +1291,7 @@ const Trace = ({ snap, dec }) => {
       <TraceStep title="1 · Offline" chip="Not driving" tone="neutral"><TraceRow label="No shift in progress, so the safety and opportunity checks do not apply" /></TraceStep>
       <TraceStep title="2 · Live demand vs normal" chip="Demand above normal" tone="blue">
         {rows.map((x) => <TraceRow key={x.z} mark={x.above ? '●' : '○'} label={`${E.Z[x.z].name}${x.near ? '' : ' (far)'}${x.surgeOn ? ` · surge pricing ${x.surge.toFixed(1)}×` : ''}`} val={`${E.pct(x.d0)} → ${E.pct(x.lv)}`} />)}
-        <TraceRow label={`Normal demand for this hour, then live demand. ● means at least ${Math.round(E.SIGNALS.demandAboveGap * 100)} points above normal. Surge pricing (a fare multiplier above 1.0×) is a separate signal and is off in every area.`} />
+        <TraceRow label={`Normal demand for this hour, then live demand. ● means at least ${Math.round(E.SIGNALS.demandAboveGap * 100)} points above normal. Surge pricing (a fare multiplier above 1.0×) is a separate signal${rows.some((x) => x.surgeOn) ? '.' : ' and is off in every area right now.'}`} />
       </TraceStep>
       <TraceStep title="3 · Shown" chip="Demand building" tone="blue"><TraceRow label="The top card names the nearby area with demand above normal and its $/hr after the unpaid drive, and offers Go online." /></TraceStep>
     </>);
@@ -1324,7 +1326,7 @@ const Trace = ({ snap, dec }) => {
 const PrototypePanel = ({ momentId, onPick, claims, snap, dec }) => (
   <aside className="space-y-6 pt-2" aria-label="Prototype controls">
     <div>
-      <p className="font-mono text-[11px] uppercase tracking-wider text-slate-500">Assignment 5 · Uber Driver Dashboard</p>
+      <p className="font-mono text-[11px] uppercase tracking-wider text-slate-600">Assignment 5 · Uber Driver Dashboard</p>
       <h1 className="mb-2 mt-1.5 text-3xl font-bold tracking-tight">Driver Home</h1>
       <p className="max-w-[58ch] text-[15px] text-slate-600">A working prototype of the one-screen driver dashboard. Pick one of three scenarios; the top card and everything beneath it recompute from the mock data.</p>
     </div>
@@ -1374,7 +1376,7 @@ const BottomNav = ({ active, onChange, locked }) => (
           <li key={id}>
             <button type="button" onClick={() => onChange(id)} disabled={off} aria-current={isActive ? 'page' : undefined}
               title={off ? 'Locked during cool-down' : undefined}
-              className={`flex w-full flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition disabled:cursor-not-allowed disabled:opacity-40 ${isActive ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}>
+              className={`flex w-full flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition disabled:cursor-not-allowed disabled:opacity-40 ${isActive ? 'text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}>
               <TabIcon className="h-6 w-6" />
               {label}
             </button>
@@ -1440,7 +1442,7 @@ const AppShell = () => {
                 ? 'relative mx-auto h-[100dvh] max-w-md overflow-hidden px-4 pt-6 pb-[calc(8.75rem+env(safe-area-inset-bottom))] lg:h-full lg:pb-24'
                 : 'mx-auto max-w-md px-4 pb-40 pt-6 lg:pb-24'}>
               {renderScreen()}
-              {!isDriving && <p className="mt-8 text-center text-[11px] text-slate-400">Prototype · mock data only</p>}
+              {!isDriving && <p className="mt-8 text-center text-[11px] text-slate-600">Prototype · mock data only</p>}
             </main>
           </div>
           {!cool && <DrivingToggleFab isDriving={isDriving} onToggle={() => setIsDriving((d) => !d)} />}
