@@ -1,0 +1,19 @@
+{
+  "name": "uber-driver-dashboard-react",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node --test test/*.test.mjs",
+    "verify": "node scripts/verify.mjs",
+    "screens": "node scripts/screens.mjs"
+  },
+  "devDependencies": {
+    "axe-core": "^4.13.0",
+    "esbuild": "^0.25.0",
+    "playwright": "^1.56.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "tailwindcss": "^3.4.0"
+  }
+}
