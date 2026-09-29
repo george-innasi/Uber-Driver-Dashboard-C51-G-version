@@ -669,7 +669,7 @@ const EphBlock = ({ snap, dec, P, recs, a, period, after }) => {
           ['Acceptance rate', a.offers ? E.pct(a.acc) : '–'],
           ['Km driven', <>{Math.round(a.km)} <span className="text-xs font-medium text-slate-600">km</span></>],
         ].map(([k, v]) => (
-          <div key={k} className="rounded-xl bg-slate-100 px-3 py-2">
+          <div key={k} className="rounded-xl bg-slate-100 px-3 py-2" {...(k === 'Acceptance rate' ? { 'data-metric': 'acceptance', 'data-num': a.accepted, 'data-den': a.offers, 'data-shown': a.offers ? E.pct(a.acc) : '–' } : {})}>
             <p className="text-[11px] text-slate-600">{k}</p>
             <p className="text-lg font-bold tabular-nums">{v}</p>
           </div>
@@ -969,7 +969,7 @@ const OptionsNearYou = ({ snap, dec, claims, onClaim }) => {
                   <p className="flex items-center gap-1.5 text-sm font-semibold text-blue-800">{E.Z[cur].name}<span className="rounded-full bg-blue-600 px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide text-white">You're here</span></p>
                   <p className="text-xs text-blue-800">Stay put · about {E.money(O.rightNow.here, 0)}/hr right now</p>
                 </div>
-                <p className="text-right text-sm font-semibold tabular-nums">{E.money(O.rightNow.stay, 0)}<span className="block text-[11px] font-medium text-slate-600">next {O.rightNow.H} hrs</span></p>
+                <p className="text-right text-sm font-semibold tabular-nums">{E.money(O.rightNow.stay / O.rightNow.H, 0)}/hr<span className="block text-[11px] font-medium text-slate-600">next {O.rightNow.H} hrs</span></p>
               </div>
               {O.rightNow.list.map((o) => (
                 <div key={o.zone} className="grid grid-cols-[1fr_auto] items-center gap-x-3 border-b border-slate-100 px-3 py-2.5 last:border-0">

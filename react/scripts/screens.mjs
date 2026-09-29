@@ -5,8 +5,6 @@ import { mkdirSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import path from 'node:path';
 
-const out = process.argv[2] || 'screens';
-mkdirSync(out, { recursive: true });
 const url = pathToFileURL(path.resolve('index.html')).href;
 const SCEN = [['login', 'Wed'], ['gold', 'Fri'], ['rest', 'Sun']];
 const TABS = ['Home', 'Earnings', 'Opportunities', 'Menu'];
@@ -29,7 +27,9 @@ export async function pickTab(page, name) {
   await page.waitForTimeout(150);
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  const out = process.argv[2] || 'screens';
+  mkdirSync(out, { recursive: true });
   const browser = await chromium.launch();
   const { page, errors } = await openApp(browser);
   const { page: mob, errors: mErr } = await openApp(browser, 420); /* phone width: the app scrolls with the page */
