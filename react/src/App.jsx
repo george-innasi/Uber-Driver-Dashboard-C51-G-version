@@ -602,7 +602,7 @@ const SplitRows = ({ S }) => {
   const max = Math.max(...S.parts.map((p) => Math.abs(p.v)), 1);
   const sg = (v) => `${v >= 0 ? '+' : '−'}${E.money(Math.abs(v))}/hr`;
   return (
-    <div className="divide-y divide-slate-200">
+    <div className="divide-y divide-slate-200" data-split={JSON.stringify({ parts: S.parts.map((p) => +p.v.toFixed(4)), gap: +(S.a.epoh - S.usual).toFixed(4) })}>
       {S.parts.map((p) => {
         const neg = p.v < 0, w = Math.max(4, (48 * Math.abs(p.v)) / max);
         return (
@@ -1013,7 +1013,7 @@ const OptionsNearYou = ({ snap, dec, claims, onClaim }) => {
                   <p className="text-[15px] font-semibold">{it.e.name}</p>
                   <p className="text-xs text-slate-600">{it.e.venue} · {E.Z[it.e.zone].name}</p>
                   <p className="text-xs text-slate-600">{fromCur(it.e.zone)}</p>
-                  <p className="mt-1 text-sm font-semibold text-amber-800">+{Math.round(it.e.prem * 100)}% · about {E.money(it.gold, 0)}/hr vs {E.money(it.typ, 0)} typical · +{E.money(it.ge.gainPerHr)}/hr after the {it.ge.mins} min drive</p>
+                  <p className="mt-1 text-sm font-semibold text-amber-800">+{Math.round(it.e.prem * 100)}% · Gold slot {E.money(it.gold, 0)}/hr · Typical here {E.money(it.typ, 0)}/hr · +{E.money(it.ge.gainPerHr)}/hr after the {it.ge.mins} min drive</p>
                 </div>
                 <MiniMap best={it.e.zone} cur={cur} gold />
               </div>
@@ -1288,7 +1288,7 @@ const Trace = ({ snap, dec }) => {
   if (state === 'start') {
     const rows = E.liveDemand(snap, op.cur).sort((a, b) => b.gap - a.gap || b.lv - a.lv);
     return (<>
-      <TraceStep title="1 · Offline" chip="Not driving" tone="neutral"><TraceRow label="No shift in progress, so the safety and opportunity checks do not apply" /></TraceStep>
+      <TraceStep title="1 · Offline" chip="Not driving" tone="neutral"><TraceRow label="No shift in progress: no current $/hr is shown. Hours since last rest are 0, so no safety flag applies." /></TraceStep>
       <TraceStep title="2 · Live demand vs normal" chip="Demand above normal" tone="blue">
         {rows.map((x) => <TraceRow key={x.z} mark={x.above ? '●' : '○'} label={`${E.Z[x.z].name}${x.near ? '' : ' (far)'}${x.surgeOn ? ` · surge pricing ${x.surge.toFixed(1)}×` : ''}`} val={`${E.pct(x.d0)} → ${E.pct(x.lv)}`} />)}
         <TraceRow label={`Normal demand for this hour, then live demand. ● means at least ${Math.round(E.SIGNALS.demandAboveGap * 100)} points above normal. Surge pricing (a fare multiplier above 1.0×) is a separate signal${rows.some((x) => x.surgeOn) ? '.' : ' and is off in every area right now.'}`} />
@@ -1309,7 +1309,7 @@ const Trace = ({ snap, dec }) => {
     </>);
   }
   const b = op.best, sign = b ? `${b.gain >= 0 ? '+' : '−'}${E.money(Math.abs(b.gain), 0)} (${b.move / op.stay >= 1 ? '+' : ''}${Math.round((b.move / op.stay - 1) * 100)}%)` : '–';
-  const res = { warn: 'Safety wins the slot. Any opportunity drops to the list below, marked.', go: 'No safety flag, and a real gain nearby: the opportunity takes the slot.', calm: 'No safety flag, no gain worth the drive: a quiet confirmation.' }[state];
+  const res = { warn: 'A safety warning wins the slot. Any opportunity drops to the list, marked; driving mode shows "Time to wrap up".', go: 'No safety flag, and a gain after the unpaid drive: the move takes the slot and driving mode.', calm: 'No safety flag, no gain worth the drive: a quiet confirmation.' }[state];
   return (<>
     <TraceStep title="1 · Safety check" chip={wb.tripped ? 'Tripped' : 'Clear'} tone={wb.tripped ? 'warn' : 'neutral'}>
       {wb.checks.map((c) => <TraceRow key={c.label} mark={c.hit ? '●' : '○'} label={c.label} val={c.val} />)}
@@ -1328,10 +1328,10 @@ const PrototypePanel = ({ momentId, onPick, claims, snap, dec }) => (
     <div>
       <p className="font-mono text-[11px] uppercase tracking-wider text-slate-600">Assignment 5 · Uber Driver Dashboard</p>
       <h1 className="mb-2 mt-1.5 text-3xl font-bold tracking-tight">Driver Home</h1>
-      <p className="max-w-[58ch] text-[15px] text-slate-600">A working prototype of the one-screen driver dashboard. Pick one of three scenarios; the top card and everything beneath it recompute from the mock data.</p>
+      <p className="max-w-[58ch] text-[15px] text-slate-600">A working prototype of the driver dashboard. The success metric is earnings per online hour, not total earnings, and wellbeing limits are a constraint on every prompt. Pick a scenario; every screen, including driving mode, recomputes from the mock data.</p>
     </div>
     <div>
-      <h2 id="moments-h" className="mb-2.5 text-sm font-semibold">Pick a scenario from Alex's week, Sep 21–27, 2026</h2>
+      <h2 id="moments-h" className="mb-2.5 text-sm font-semibold">Pick a scenario from Alex's week, Sep 21–27, 2026 (Friday is an alternate history)</h2>
       <div className="grid gap-2" role="group" aria-labelledby="moments-h">
         {E.MOMENTS.map((m) => {
           const st = E.decide(E.snapshot(m), claims).state, on = m.id === momentId;
@@ -1350,8 +1350,8 @@ const PrototypePanel = ({ momentId, onPick, claims, snap, dec }) => (
       <h2 className="mb-2.5 text-sm font-semibold">Why the top card shows this</h2>
       <div className="rounded-xl border border-slate-200 bg-white px-3.5 py-1"><Trace snap={snap} dec={dec} /></div>
     </div>
-    <p className="max-w-[60ch] text-xs text-slate-600"><b className="text-slate-900">About the data.</b> Alex is a part-time driver who works 20–25 hours a week around a day job. Everything here comes from a seeded generator: 52 weeks of Alex's shifts across six zones, a zone-by-hour demand model, city-wide surge history, and 80 simulated part-time drivers over the same 52 weeks, so every comparison uses the same dates. No real Uber data is used.</p>
-    <p className="max-w-[60ch] text-xs text-slate-600"><b className="text-slate-900">Modelled assumptions.</b> Trip offers usually fall when a driver's cancellation rate passes {E.pct(E.THRESHOLDS.cancellation.goal)} or their rating drops below {E.THRESHOLDS.rating.goal.toFixed(2)}. Declining offers lifts the average fare but costs waiting time, more so in quiet hours. Every "move" estimate counts the drive as unpaid time, using fixed drive times between zones.</p>
+    <p className="max-w-[60ch] text-xs text-slate-600"><b className="text-slate-900">About the data.</b> Alex is a part-time driver who works 20–25 hours a week around a day job. Everything here comes from a seeded generator: 52 weeks of Alex's shifts across six zones, a zone-by-hour demand model, city-wide surge history, and 80 simulated part-time drivers over the same 52 weeks, so every comparison uses the same dates. The Friday scenario uses a second seeded history of Alex with Gold-level behaviour. No real Uber data is used.</p>
+    <p className="max-w-[60ch] text-xs text-slate-600"><b className="text-slate-900">Modelled assumptions.</b> Trip offers usually fall when a driver's cancellation rate passes {E.pct(E.THRESHOLDS.cancellation.goal)} or their rating drops below {E.THRESHOLDS.rating.goal.toFixed(2)}. Declining offers lifts the average fare but costs waiting time, more so in quiet hours. Every "move" estimate counts the drive as unpaid time, using fixed drive times between zones. "Your usual" is the median weekly $/hr in the same day-part over the last 8 weeks.</p>
   </aside>
 );
 

@@ -89,7 +89,10 @@ function simRecord(dr,r,sd,dur,zid){
   let accepted=0,cancels=0;
   for(let i=0;i<offers;i++)if(r()<dr.acc)accepted++;
   for(let i=0;i<accepted;i++)if(r()<st.cancel)cancels++;
+  /* F2: when the hour cannot fit every accepted trip, the extra offers count as
+     declined (no extra random draws), so trips = accepted - cancelled always */
   const trips=Math.min(accepted-cancels,Math.floor(dur*.95*60/tripLen));
+  accepted=trips+cancels;
   const engaged=trips*tripLen/60;
   const pick=1+.9*(ACC_T-dr.acc);
   const mult=surgeAt(zid,mid);
@@ -148,9 +151,9 @@ const ALEX={acc:.72,smart:.3,hMin:20,hMax:25,pref:{dt:.3,un:.22,ns:.24,mt:.14,wf
   cancelAt:t=>ramp(t,new Date(2026,7,10).getTime(),new Date(2026,8,20).getTime(),.03,.09),
   ratingAt:t=>ramp(t,new Date(2026,7,3).getTime(),new Date(2026,8,26).getTime(),4.94,4.82)};
 /* Alex as a Gold driver: same seeds and the same fixed Sep 21-27 week, but
-   steady behaviour (about 78% acceptance, 2% cancellations, 4.94 rating).
+   steady behaviour (about 80% acceptance, 2% cancellations, 4.94 rating).
    Used only by the Gold scenario, labelled as an alternate history. */
-const ALEX_GOLD={...ALEX,acc:.78,cancelAt:()=>.02,ratingAt:()=>4.94};
+const ALEX_GOLD={...ALEX,acc:.82,cancelAt:()=>.02,ratingAt:()=>4.94};
 const FIXED_WEEK=[
   [new Date(2026,8,21),17,   4,   ['un','un','ns','ns']],
   [new Date(2026,8,22),14.67,5,   ['ns','ns','dt','dt','dt']],
@@ -198,9 +201,9 @@ export function pctBelow(v,arr){return Math.round(100*arr.filter(x=>x<v).length/
 
 /* ---- Scenarios (the React build currently uses 'login', the Demand scenario) ---- */
 export const MOMENTS=[
-  {id:'login',tag:'Demand',blurb:'Alex opens the app at home in Northside, offline. Demand is running above normal in nearby Downtown and Midtown.',now:new Date(2026,8,23,15,45),boost:{},live:{dt:.24,mt:.15}},
-  {id:'gold',tag:'Gold',history:'gold',blurb:'Alternate history: Alex as a Gold driver who meets the standard. Online in Waterfront for 15 minutes. A homecoming concert lets out at University tonight, 10 PM to 12 AM.',now:new Date(2026,8,25,18,25),boost:{},live:{}},
-  {id:'rest',tag:'Rest',blurb:'Alex reached the 10-hour limit and was taken offline for a 7-hour rest. Demand is starting to rise on the left side of the city.',now:new Date(2026,8,27,22,0),boost:{},live:{un:.26,mt:.18}}
+  {id:'login',tag:'Demand',blurb:'Offline at home in Northside. Demand is above normal in Downtown and Midtown; surge pricing is off. The top card and driving mode show the best next move, with the drive counted as unpaid.',now:new Date(2026,8,23,15,45),boost:{},live:{dt:.24,mt:.15}},
+  {id:'gold',tag:'Gold',history:'gold',blurb:'Alternate history: Alex as a Gold driver who meets the standard. Online in Waterfront for 15 minutes. The 10 PM to 12 AM concert slot at University is offered with a late-night caution.',now:new Date(2026,8,25,18,25),boost:{},live:{}},
+  {id:'rest',tag:'Rest',blurb:'Alex reached the 10-hour limit and is offline for a 7-hour rest. No live demand, surge or earning prompt anywhere; only the best window after the rest.',now:new Date(2026,8,27,22,0),boost:{},live:{un:.26,mt:.18}}
 ];
 
 export function snapshot(m){
@@ -214,7 +217,7 @@ export function snapshot(m){
       const end=r.s+r.dur*HOUR;
       if(end<=now){recs.push(r);return;}
       const f=(now-r.s)/(r.dur*HOUR);
-      recs.push({...r,dur:r.dur*f,engaged:r.engaged*f,trips:Math.round(r.trips*f),fare:r.fare*f,tips:r.tips*f,surge:r.surge*f,offers:Math.round(r.offers*f),accepted:Math.round(r.accepted*f),cancels:Math.round(r.cancels*f),rc:Math.round(r.rc*f),rs:Math.round(r.rc*f)*(r.rc?r.rs/r.rc:0),offT:r.offT*f,km:(r.km||0)*f,partial:true});
+      recs.push({...r,dur:r.dur*f,engaged:r.engaged*f,trips:Math.max(0,Math.round(r.accepted*f)-Math.round(r.cancels*f)),fare:r.fare*f,tips:r.tips*f,surge:r.surge*f,offers:Math.round(r.offers*f),accepted:Math.round(r.accepted*f),cancels:Math.round(r.cancels*f),rc:Math.round(r.rc*f),rs:Math.round(r.rc*f)*(r.rc?r.rs/r.rc:0),offT:r.offT*f,km:(r.km||0)*f,partial:true});
     });
     const e=Math.min(s.e,now);
     shifts.push({id:s.id,s:s.s,e,recs,live:s.e>now});
@@ -539,9 +542,9 @@ export function slowSplit(snap,recs,usual){
   const lo=hourOf(new Date(recs[0].s)), hi=lo+(recs[recs.length-1].s+recs[recs.length-1].dur*HOUR-recs[0].s)/HOUR;
   const zn=zones.map(z=>Z[z].name).join(' + '), win=`${fmtHour(Math.floor(lo))}–${fmtHour(Math.ceil(hi))}`;
   const detail={
-    zone:[[`${zn}, ${win}, usually`,money(E)+'/hr'],['Your usual',money(usual)+'/hr']].concat(best&&!zones.includes(best.zone)&&best.v>E*1.1?[[`${Z[best.zone].name} (${travel(zones[0],best.zone)} min), usually`,money(best.v)+'/hr']]:[]),
+    zone:[[`${zn}, ${win}, usually`,money(E)+'/hr'],['Your usual (same day-part, last 8 weeks)',money(usual)+'/hr']].concat(best&&!zones.includes(best.zone)&&best.v>E*1.1?[[`${Z[best.zone].name} (${travel(zones[0],best.zone)} min), usually`,money(best.v)+'/hr']]:[]),
     market:ok?[['Drivers here today',money(E*f)+'/hr'],['Same zones & hours, usually',money(E)+'/hr']]:null,
-    you:[['You',money(a.epoh)+'/hr'],['Drivers here today',money(E*f)+'/hr'],['Offers per hour',`${a.offph.toFixed(1)} vs ${ok?pa.offph.toFixed(1):'–'}`],['Cancellations',`${pct(a.cancelRate)} vs ${ok?pct(pa.cancelRate):'–'}`],['Time on a trip',`${pct(a.util)} vs ${ok?pct(pa.util):'–'}`]]
+    you:[['You',money(a.epoh)+'/hr'],['Drivers here today',money(E*f)+'/hr'],['Offers per hour',`You ${a.offph.toFixed(1)} · Drivers here ${ok?pa.offph.toFixed(1):'–'}`],['Cancellations',`You ${pct(a.cancelRate)} · Drivers here ${ok?pct(pa.cancelRate):'–'}`],['Time on a trip',`You ${pct(a.util)} · Drivers here ${ok?pct(pa.util):'–'}`]]
   };
   return {a,usual,E,f,ok,
     parts:[{k:'zone',t:'Zone & time',v:E-usual,rows:detail.zone},{k:'market',t:'Market today',v:E*(f-1),rows:detail.market},{k:'you',t:'Your driving',v:a.epoh-E*f,rows:detail.you}]};
