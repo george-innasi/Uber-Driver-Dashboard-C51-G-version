@@ -381,6 +381,7 @@ const AccountStandingGrid = ({ snap }) => {
   const W = useMemo(() => E.standingWindow(snap, win), [snap, win]);
   const a = W.a, p = W.peer;
   const T = E.THRESHOLDS;
+  const offersInsight = useMemo(() => E.offerInsight(snap), [snap]);
   const fewer = Math.max(1, a.cancels - Math.floor(T.cancellation.goal * a.accepted));
   const tiles = [
     { key: 'acc', th: 'acceptance', label: 'Acceptance rate', value: E.pct(a.acc), num: a.accepted, den: a.offers, t: a.offers ? E.tierOf('acceptance', a.acc) : null, count: `${a.accepted} of ${a.offers} offers`, goal: T.acceptance.label, peer: E.pct(p.acc) },
@@ -388,7 +389,10 @@ const AccountStandingGrid = ({ snap }) => {
     { key: 'cancel', th: 'cancellation', label: 'Cancellation rate', value: E.pct(a.cancelRate), num: a.cancels, den: a.accepted, t: a.accepted ? E.tierOf('cancellation', a.cancelRate) : null, count: `${a.cancels} of ${a.accepted} accepted trips`, goal: T.cancellation.label, peer: E.pct(p.cancel),
       tip: `Cancel ${fewer} fewer trip${fewer === 1 ? '' : 's'} to reach ${E.pct(T.cancellation.goal)}.` },
     { key: 'offers', th: 'tripOffers', label: 'Trip offers', value: E.pct(a.offIdx), num: a.offers, den: a.offT, t: a.offT ? E.tierOf('tripOffers', a.offIdx) : null, count: `${a.offers} of ${Math.round(a.offT)} typical`, goal: T.tripOffers.label, peer: E.pct(p.offIdx) },
+    { key: 'insight' },
   ];
+  /* D1: the offer insight sits directly under the Cancellation tile when it is in Focus */
+  const insight = tiles.find((t) => t.key === 'cancel').t === 'bad' ? offersInsight : null;
   return (
     <section className="space-y-3">
       <SectionHead title="Your standing" note={W.desc} />
@@ -399,6 +403,12 @@ const AccountStandingGrid = ({ snap }) => {
         <>
           <div className="grid grid-cols-2 gap-3">
             {tiles.map((t) => {
+              if (t.key === 'insight') return insight && (
+                <details key="insight" className="col-span-2 rounded-xl border border-rose-200 bg-white px-3 py-2 text-xs text-slate-700" data-insight="offers">
+                  <summary className="cursor-pointer font-semibold text-rose-800">{insight.short} <span className="font-normal text-slate-600">(last 4 weeks)</span></summary>
+                  <p className="mt-1.5 leading-relaxed">{insight.full}</p>
+                </details>
+              );
               const st = TIER_STYLE[t.t] || { tile: 'border-slate-200 bg-white', num: 'text-slate-900', chip: '' };
               return (
                 <section key={t.key} className={`flex flex-col rounded-2xl border p-3.5 ${st.tile}`} data-metric={t.th} data-num={t.num} data-den={t.den} data-shown={t.value}>
@@ -1207,6 +1217,7 @@ const Spark = ({ label, val, series, lo, hi, thr, bad, fmt, thrLbl }) => {
 
 const TripOffers = ({ snap }) => {
   const O = useMemo(() => E.offersData(snap), [snap]);
+  const I = useMemo(() => E.offerInsight(snap), [snap]);
   const n = O.now;
   return (
     <section>
@@ -1215,7 +1226,7 @@ const TripOffers = ({ snap }) => {
         <div className="flex flex-wrap items-baseline gap-2"><span className="text-2xl font-bold tabular-nums">{n.offph.toFixed(1)} offers/hr</span><Chip tone={O.chip.tone}>{O.chip.t}</Chip></div>
         <p className="text-xs leading-relaxed text-slate-600">
           {!E.meets('tripOffers', n.offIdx) ? (
-            <>You are getting fewer trip offers than drivers in the same zones and hours{O.reasons.length ? ` since ${O.reasons.join(' and ')}.` : '.'} That is roughly <b className="text-slate-900">{E.money(O.lostPerWk, 0)} a week</b> in trips you were never offered. Cancelling fewer accepted trips is the fastest lever.</>
+            I ? I.full : ''
           ) : `You get about as many offers as other drivers in the same zones and hours. Keep cancellations at ${E.THRESHOLDS.cancellation.label} and your rating at ${E.THRESHOLDS.rating.label} to keep it that way.`}
         </p>
         <div className="space-y-3">

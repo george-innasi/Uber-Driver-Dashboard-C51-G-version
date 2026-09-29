@@ -699,6 +699,18 @@ export function offersData(snap){
     chip:!M.meets('tripOffers',now.offIdx)?{tone:'warn',t:`${pct(1-now.offIdx)} fewer than typical`}:now.offIdx<.98?{tone:'neutral',t:'Slightly below typical'}:{tone:'go',t:'In line with typical'}};
 }
 
+/* D1/D2: the offer-throttling insight, one text used on Home and in Menu.
+   The cause is phrased as modelled, not as a certain cause. */
+export function offerInsight(snap){
+  const O=offersData(snap), n=O.now, T=THRESHOLDS;
+  if(M.meets('tripOffers',n.offIdx)||O.lostPerWk<1)return null;
+  const lost=money(O.lostPerWk,0);
+  const why=O.reasons.length?` Over the last 12 weeks, ${O.reasons.join(' and ')}.`:'';
+  return {lostPerWk:O.lostPerWk,
+    short:`Cancellations are costing you about ${lost}/week in offers.`,
+    full:`You get ${pct(1-n.offIdx)} fewer trip offers than drivers in the same zones and hours. Offers usually drop when a driver's cancellation rate goes above ${pct(T.cancellation.goal)} or their rating falls below ${T.rating.goal.toFixed(2)}.${why} In our model that is about ${lost} a week in trips never offered. Cancelling fewer accepted trips is the fastest lever.`};
+}
+
 /* =====================================================================
    Home tab: live demand (normal demand for the zone and hour, plus the
    live gap above it). "Demand above normal" = at least 12 points above

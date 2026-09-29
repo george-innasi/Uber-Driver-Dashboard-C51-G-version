@@ -25,7 +25,7 @@ export async function pickScenario(page, i) {
   await page.waitForTimeout(150);
 }
 export async function pickTab(page, name) {
-  await page.locator('nav[aria-label="Primary"] button', { hasText: name }).click();
+  await page.locator('nav[aria-label="Primary"] button', { hasText: name }).evaluate((el) => el.click());
   await page.waitForTimeout(150);
 }
 
