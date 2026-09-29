@@ -1,0 +1,1736 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Driver Home Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+:root{
+  --page:#FFFFFF; --surface:#FFFFFF; --surface-2:#F4F6F8; --ink:#131A22; --ink-2:#4B5967; --muted:#76838F;
+  --line:#DAE0E6; --grid:#E7EBEF; --ring:rgba(19,26,34,.08);
+  --accent:#2a78d6; --accent-soft:#E2EDFB; --accent-ink:#1c5cab;
+  --late:#eb6834;
+  --go:#1E845A; --go-soft:#E2F3EA; --go-ink:#11603F;
+  --warn:#C04A1F; --warn-soft:#FBE8DF; --warn-ink:#8A3213;
+  --calm:#4A5E72; --calm-soft:#E8EDF2; --calm-ink:#2E4153;
+  --peer:#B9C2CB;
+  --gold:#B8860B; --gold-soft:#FBF1D0; --gold-ink:#6E4E00; --gold-line:#E2B94B;
+  --seq-0:#cde2fb; --seq-1:#9ec5f4; --seq-2:#6da7ec; --seq-3:#3987e5; --seq-4:#256abf; --seq-5:#184f95; --seq-6:#0d366b;
+  --shadow:0 18px 50px rgba(19,26,34,.12);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --page:#0D1115; --surface:#161B21; --surface-2:#1D232A; --ink:#EDF1F5; --ink-2:#B3BEC9; --muted:#8792A0;
+    --line:#2A323B; --grid:#232A32; --ring:rgba(255,255,255,.08);
+    --accent:#3987e5; --accent-soft:rgba(57,135,229,.16); --accent-ink:#86b6ef;
+    --late:#d95926;
+    --go:#3DB482; --go-soft:rgba(61,180,130,.14); --go-ink:#83D8B3;
+    --warn:#E6744A; --warn-soft:rgba(230,116,74,.15); --warn-ink:#F4A988;
+    --calm:#8CA2B7; --calm-soft:rgba(140,162,183,.14); --calm-ink:#C3D3E2;
+    --peer:#46515D;
+    --gold:#E0B23F; --gold-soft:rgba(224,178,63,.14); --gold-ink:#F0CF7A; --gold-line:#8A6B1C;
+    --seq-0:#0d366b; --seq-1:#184f95; --seq-2:#256abf; --seq-3:#3987e5; --seq-4:#6da7ec; --seq-5:#9ec5f4; --seq-6:#cde2fb;
+    --shadow:0 18px 50px rgba(0,0,0,.45);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --page:#0D1115; --surface:#161B21; --surface-2:#1D232A; --ink:#EDF1F5; --ink-2:#B3BEC9; --muted:#8792A0;
+  --line:#2A323B; --grid:#232A32; --ring:rgba(255,255,255,.08);
+  --accent:#3987e5; --accent-soft:rgba(57,135,229,.16); --accent-ink:#86b6ef;
+  --late:#d95926;
+  --go:#3DB482; --go-soft:rgba(61,180,130,.14); --go-ink:#83D8B3;
+  --warn:#E6744A; --warn-soft:rgba(230,116,74,.15); --warn-ink:#F4A988;
+  --calm:#8CA2B7; --calm-soft:rgba(140,162,183,.14); --calm-ink:#C3D3E2;
+  --peer:#46515D;
+  --gold:#E0B23F; --gold-soft:rgba(224,178,63,.14); --gold-ink:#F0CF7A; --gold-line:#8A6B1C;
+  --seq-0:#0d366b; --seq-1:#184f95; --seq-2:#256abf; --seq-3:#3987e5; --seq-4:#6da7ec; --seq-5:#9ec5f4; --seq-6:#cde2fb;
+  --shadow:0 18px 50px rgba(0,0,0,.45);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);font-family:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;font-size:14px;line-height:1.45;padding-inline:16px;padding-block:28px 48px}
+.mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+.layout{max-width:1060px;margin-inline:auto;display:grid;grid-template-columns:minmax(0,1fr) 404px;gap:44px;align-items:start}
+@media (max-width:920px){.layout{grid-template-columns:1fr;gap:24px}}
+
+/* ---------- Left panel ---------- */
+.panel{display:flex;flex-direction:column;gap:26px;padding-top:8px}
+.eyebrow{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.panel h1{font-size:30px;line-height:1.1;margin:6px 0 10px;letter-spacing:-.01em;text-wrap:balance}
+.panel .lede{margin:0;color:var(--ink-2);font-size:15px;max-width:58ch}
+.panel h2{font-size:13px;margin:0 0 10px;font-weight:600;color:var(--ink)}
+.moments{display:grid;gap:8px}
+.moment{display:grid;grid-template-columns:1fr auto;gap:2px 12px;align-items:center;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.moment:hover{border-color:var(--muted)}
+.moment[aria-pressed="true"]{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
+.moment .when{font-weight:600;font-size:14px}
+.moment .blurb{grid-column:1;color:var(--ink-2);font-size:12.5px}
+.moment .chip{grid-row:1 / span 2;grid-column:2}
+.chip{display:inline-flex;align-items:center;gap:5px;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;padding:4px 8px;border-radius:999px;white-space:nowrap}
+.chip svg{flex:none}
+.chip.go{background:var(--go-soft);color:var(--go-ink)}
+.chip.warn{background:var(--warn-soft);color:var(--warn-ink)}
+.chip.calm{background:var(--calm-soft);color:var(--calm-ink)}
+.chip.neutral{background:var(--surface-2);color:var(--ink-2)}
+.trace{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:6px 14px}
+.trace-step{padding:10px 0;border-bottom:1px solid var(--grid)}
+.trace-step:last-child{border-bottom:0}
+.trace-step h3{margin:0 0 6px;font-size:12.5px;font-weight:600;display:flex;justify-content:space-between;gap:8px;align-items:center}
+.trace-row{display:grid;grid-template-columns:18px 1fr auto;gap:8px;font-size:12.5px;color:var(--ink-2);padding:2px 0;align-items:baseline}
+.trace-row .v{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11.5px;color:var(--ink);white-space:nowrap}
+.tick-yes{color:var(--warn)} .tick-no{color:var(--muted)}
+.about{font-size:12.5px;color:var(--ink-2);margin:0;max-width:60ch}
+.about b{color:var(--ink);font-weight:600}
+
+/* ---------- Phone ---------- */
+.phone{background:var(--surface);border:1px solid var(--line);border-radius:34px;box-shadow:var(--shadow);overflow:hidden;position:sticky;top:20px}
+.phone-scroll{height:min(800px,calc(100vh - 120px));overflow-y:auto;overscroll-behavior:contain}
+@media (max-width:920px){.phone{position:static;border-radius:24px}.phone-scroll{height:auto;overflow:visible}}
+.app{position:relative;padding:22px 20px 28px;display:flex;flex-direction:column;gap:20px}
+.app-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.app-head .hello{font-size:18px;font-weight:600;margin-top:2px}
+.app-head .ctx{font-size:12px;color:var(--muted)}
+.online-pill{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;color:var(--go-ink);background:var(--go-soft);padding:5px 10px;border-radius:999px;white-space:nowrap}
+.online-pill i{width:7px;height:7px;border-radius:50%;background:var(--go);display:block}
+
+/* Band 1 */
+.now-card{border-radius:20px;padding:16px 18px 18px;display:flex;flex-direction:column;gap:6px;border:1.5px solid;transition:background .2s,border-color .2s}
+.now-card.go{background:var(--go-soft);border-color:var(--go)}
+.now-card.warn{background:var(--warn-soft);border-color:var(--warn)}
+.now-card.calm{background:var(--calm-soft);border-color:var(--calm)}
+.now-top{display:flex;justify-content:space-between;align-items:center}
+.now-title{display:flex;align-items:center;gap:10px;font-size:22px;font-weight:600;line-height:1.15;letter-spacing:-.01em;text-wrap:balance}
+.now-title svg{flex:none}
+.now-stat{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:15px;font-weight:600}
+.now-card.go .now-stat,.now-card.go .now-title svg{color:var(--go-ink)}
+.now-card.warn .now-stat,.now-card.warn .now-title svg{color:var(--warn-ink)}
+.now-card.calm .now-stat,.now-card.calm .now-title svg{color:var(--calm-ink)}
+.now-sub{font-size:12.5px;color:var(--ink-2);margin-top:2px}
+.now-card.offer{padding:12px 14px 12px;gap:4px;border-radius:16px}
+.now-card.offer .now-title{font-size:18px}
+.now-card.offer .now-title svg{width:18px;height:18px}
+.offer-h{font-size:12px;font-weight:600;color:var(--go-ink)}
+.now-card.offer .cmp{margin-top:4px}
+.now-card.offer .cmp-cell{padding:7px 10px;border-radius:10px}
+.now-card.offer .cmp-cell .v{font-size:19px}
+.now-card.offer .acts{margin-top:6px}
+.now-card.offer .acts button{min-height:40px;font-size:14px;border-radius:10px}
+.timer{margin-top:6px}
+.timer-bar{height:5px;border-radius:3px;background:var(--surface);overflow:hidden}
+.timer-bar i{display:block;height:100%;background:var(--go);transition:width 1s linear}
+.timer-bar.low i{background:var(--warn)}
+.timer-t{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-top:3px}
+.timer-t b{font-family:'IBM Plex Mono',ui-monospace,monospace;color:var(--ink)}
+.now-meta{font-size:13px;color:var(--go-ink);font-weight:500;margin-top:-2px}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.cmp-cell{background:var(--surface);border-radius:12px;padding:10px 12px;border:1.5px solid transparent}
+.cmp-cell.pick{border-color:var(--go)}
+.cmp-cell .k{font-size:11.5px;color:var(--muted)}
+.cmp-cell .v{font-size:24px;font-weight:600;letter-spacing:-.01em;line-height:1.2}
+.cmp-cell.pick .v{color:var(--go-ink)}
+.cmp-foot{display:flex;justify-content:space-between;align-items:baseline;font-size:11.5px;color:var(--muted);margin-top:2px}
+.cmp-foot b{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:13px;color:var(--go-ink)}
+.acts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.acts button{min-height:46px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;border:1.5px solid var(--go)}
+.acts .no{background:var(--surface);color:var(--ink)}
+.acts .yes{background:var(--go);color:#fff}
+.undo{background:none;border:0;padding:0;color:var(--muted);font-size:12px;text-decoration:underline;cursor:pointer;align-self:flex-start;margin-top:4px}
+
+/* Band 2 */
+.tabs{display:flex;gap:4px;background:var(--surface-2);padding:3px;border-radius:999px}
+.tab{flex:1;border:0;background:transparent;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;padding:7px 0;border-radius:999px;color:var(--muted);cursor:pointer;min-height:32px}
+.tab[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px var(--ring),0 0 0 1px var(--ring)}
+.hero-label{font-size:12px;color:var(--muted);margin-top:14px}
+.hero-row{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.hero{font-size:48px;font-weight:600;letter-spacing:-.02em;line-height:1.05}
+.split{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.pill{display:inline-flex;align-items:baseline;gap:4px;padding:4px 9px;border-radius:999px;color:#fff;font-size:11.5px;font-weight:500}
+.pill b{font-weight:700;font-size:12.5px;font-variant-numeric:tabular-nums}
+.pill.fare{background:#1c5cab}.pill.surge{background:#C04A1F}.pill.tips{background:#11603F}.pill.trip{background:#2E4153}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}
+.kpi{background:var(--surface-2);border-radius:12px;padding:10px 11px}
+.kpi .k{font-size:11px;color:var(--muted)}
+.kpi .v{font-size:17px;font-weight:600;margin-top:1px}
+.kpi .v small{font-size:11px;font-weight:500;color:var(--muted)}
+.kpi.star{background:var(--accent-soft)}
+.kpi.star .k{color:var(--accent-ink)}
+.bench-line{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-2);margin-top:10px}
+.chart{margin-top:14px}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+details.table{margin-top:6px;font-size:12px;color:var(--ink-2)}
+details.table summary{cursor:pointer;color:var(--muted);font-size:11.5px;min-height:24px;display:flex;align-items:center}
+details.table table{width:100%;border-collapse:collapse;margin-top:6px;font-variant-numeric:tabular-nums}
+details.table th,details.table td{text-align:right;padding:4px 6px;border-bottom:1px solid var(--grid)}
+details.table th:first-child,details.table td:first-child{text-align:left}
+details.table th{font-weight:600;color:var(--ink)}
+
+.eph{margin-top:16px;display:flex;flex-direction:column;gap:10px}
+.eph-card{background:var(--accent-soft);border-radius:16px;padding:14px 16px}
+.eph-card .k{font-size:12.5px;font-weight:600;color:var(--accent-ink)}
+.eph-card .v{font-size:36px;font-weight:600;letter-spacing:-.02em;line-height:1.1;color:var(--ink)}
+.eph-card .v small{font-size:15px;font-weight:500;color:var(--ink-2)}
+.k-row{display:flex;align-items:center;gap:8px}
+.info-btn{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--accent-ink);background:transparent;color:var(--accent-ink);font-family:Georgia,serif;font-style:italic;font-weight:700;font-size:12px;line-height:1;padding:0;cursor:pointer;display:inline-grid;place-items:center}
+.info-btn[aria-expanded="true"]{background:var(--accent-ink);color:#fff}
+.info-box{background:var(--surface);border-radius:10px;padding:9px 11px;font-size:12px;color:var(--ink-2);margin-top:6px;display:flex;flex-direction:column;gap:4px}
+.info-box b{color:var(--ink);font-size:12.5px}
+.info-box .calc{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;color:var(--ink)}
+.eph-card .bench-line{margin-top:8px}
+.mtiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.mtile{background:var(--surface-2);border-radius:12px;padding:9px 11px}
+.mtile .k{font-size:11px;color:var(--muted)}
+.mtile .v{font-size:17px;font-weight:600;margin-top:1px}
+.mtile .v small{font-size:11px;font-weight:500;color:var(--muted)}
+.subtabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--surface-2);padding:3px;border-radius:12px}
+.subtabs button{border:0;background:transparent;border-radius:9px;padding:9px 4px;font-size:12.5px;white-space:nowrap;font-weight:600;color:var(--muted);cursor:pointer;min-height:38px}
+.subtabs button[aria-pressed="true"]{background:var(--accent);color:#fff}
+.sub-note{font-size:11.5px;color:var(--muted)}
+.lever{display:grid;grid-template-columns:22px 1fr auto;gap:2px 10px;padding:10px 0;border-top:1px solid var(--line);align-items:start}
+.lever:first-of-type{border-top:0}
+.lever .n{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11px;color:var(--muted);padding-top:2px}
+.lever .t{font-weight:600;font-size:13.5px}
+.lever .g{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12.5px;font-weight:600;color:var(--go-ink);white-space:nowrap}
+.lever .x{grid-column:2 / span 2;font-size:12.5px;color:var(--ink-2)}
+.reach{background:var(--go-soft);border-radius:12px;padding:10px 12px;font-size:12.5px;color:var(--go-ink)}
+.reach b{font-size:16px}
+table.perf{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
+table.perf th{font-size:11px;font-weight:600;color:var(--muted);text-align:right;padding:4px 4px 6px}
+table.perf th:first-child,table.perf td:first-child{text-align:left}
+table.perf td{padding:7px 4px;border-top:1px solid var(--line);text-align:right;color:var(--ink)}
+table.perf td.you{font-weight:600}
+table.perf td.you.bad{color:var(--warn-ink)}
+table.perf td.you.good{color:var(--go-ink)}
+table.perf tr.north td{font-size:14px;font-weight:600}
+.split3{display:flex;flex-direction:column}
+details.why{border-top:1px solid var(--line)}
+details.why:first-child{border-top:0}
+details.why summary{list-style:none;display:grid;grid-template-columns:96px 1fr auto;gap:8px;align-items:center;padding:9px 0;cursor:pointer}
+details.why summary::-webkit-details-marker{display:none}
+details.why summary::after{content:"›";color:var(--muted);font-size:16px;transform:rotate(90deg);transition:transform .15s;grid-column:4}
+details.why[open] summary::after{transform:rotate(-90deg)}
+details.why summary{grid-template-columns:96px 1fr auto 10px}
+.wl{font-size:12.5px;font-weight:600;color:var(--ink)}
+.wbar{position:relative;height:8px;background:var(--grid);border-radius:4px}
+.wbar::before{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:var(--muted)}
+.wbar i{position:absolute;top:0;bottom:0;border-radius:4px}
+.wbar i.neg{background:var(--warn)} .wbar i.pos{background:var(--go)}
+.wv{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12.5px;font-weight:600;white-space:nowrap;text-align:right;min-width:78px}
+.wv.neg{color:var(--warn-ink)} .wv.pos{color:var(--go-ink)}
+dl.kv{display:grid;grid-template-columns:1fr auto;gap:3px 10px;margin:0 0 10px;padding:8px 10px;background:var(--surface);border-radius:10px;font-size:12px}
+dl.kv dt{color:var(--ink-2)} dl.kv dd{margin:0;text-align:right;font-family:'IBM Plex Mono',ui-monospace,monospace;color:var(--ink)}
+details.why-live{margin-top:8px;background:var(--surface);border-radius:12px;padding:0 10px}
+details.why-live>summary{cursor:pointer;font-size:12.5px;font-weight:600;color:var(--accent-ink);padding:8px 0}
+details.lever-d{border-top:1px solid var(--line)}
+details.lever-d:first-child{border-top:0}
+details.lever-d summary{list-style:none;display:flex;justify-content:space-between;gap:10px;padding:10px 0;cursor:pointer}
+details.lever-d summary::-webkit-details-marker{display:none}
+details.lever-d .t{font-weight:600;font-size:13px}
+details.lever-d .g{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12.5px;font-weight:600;color:var(--go-ink);white-space:nowrap}
+details.lever-d .x{font-size:12px;color:var(--ink-2);padding:0 0 10px}
+.reach{display:flex;justify-content:space-between}
+.online-pill.off{background:var(--calm-soft);color:var(--calm-ink)}
+.online-pill.off i{background:var(--calm)}
+.hours{background:var(--surface-2);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.h-top{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px}
+.h-top .l{font-weight:600}
+.h-top .v{color:var(--ink-2)}
+.h-top .v b{color:var(--ink);font-family:'IBM Plex Mono',ui-monospace,monospace}
+.h-bar{height:8px;border-radius:4px;background:var(--grid);overflow:hidden}
+.h-bar i{display:block;height:100%;border-radius:4px;background:var(--accent)}
+.hours.near .h-bar i{background:var(--late)}
+.hours.max .h-bar i{background:var(--warn)}
+.h-foot{display:flex;justify-content:space-between;gap:8px;font-size:11.5px;color:var(--muted)}
+.hours.near .h-foot span:first-child,.hours.max .h-foot span:first-child{color:var(--warn-ink);font-weight:600}
+.chip.cool{background:var(--calm-soft);color:var(--calm-ink)}
+.now-card.cool{background:var(--calm-soft);border-color:var(--calm);gap:4px}
+.now-card.cool .now-title svg{color:var(--calm-ink)}
+.cd-time{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:34px;font-weight:600;letter-spacing:-.01em;color:var(--calm-ink);line-height:1.1;margin-top:2px}
+.cd-sub{font-size:12.5px;color:var(--ink-2)}
+.rest-bar{height:6px;border-radius:3px;background:var(--surface);overflow:hidden;margin-top:6px}
+.rest-bar i{display:block;height:100%;background:var(--calm);width:0}
+.lockbtn{margin-top:8px;width:100%;min-height:44px;border-radius:12px;border:1.5px dashed var(--calm);background:transparent;color:var(--calm-ink);font-weight:600;font-size:14px;display:flex;gap:8px;align-items:center;justify-content:center;cursor:not-allowed;opacity:.85}
+.cooldown .cd-hide,.cooldown #tabs
+.fold{display:flex;align-items:center;gap:10px;color:var(--muted);font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10px;letter-spacing:.07em}
+.fold::before,.fold::after{content:"";flex:1;border-top:1px dashed var(--line)}
+
+/* Band 3 */
+.now-card.start{background:var(--surface);border-color:var(--line);gap:8px}
+.now-card.gold{background:linear-gradient(135deg,var(--gold-soft),var(--surface));border-color:var(--gold-line)}
+.now-card.gold .now-title svg{color:var(--gold)}
+.dm-sub{font-size:13.5px;color:var(--ink-2)}
+.dm-seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--surface-2);padding:3px;border-radius:999px}
+.dm-seg button{border:0;background:transparent;border-radius:999px;padding:6px 0;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;min-height:30px}
+.dm-seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px var(--ring),0 0 0 1px var(--ring)}
+.dm-card{padding:10px 12px;gap:8px}
+.dm-map{border-radius:14px;overflow:hidden;border:1px solid var(--grid)}
+.dm-map svg{display:block;width:100%;height:auto}
+.dm-legend{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted)}
+.dm-legend i{display:block;width:60px;height:7px;border-radius:4px;background:linear-gradient(90deg,#D98E00,#8E2A7E,#D92D3A)}
+.dm-row{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:8px 0;border-top:1px solid var(--grid);font-size:12.5px;color:var(--ink-2)}
+.dm-row b{color:var(--ink);font-size:13.5px}
+.dm-row .m{font-family:'IBM Plex Mono',ui-monospace,monospace;font-weight:600;color:var(--ink);text-align:right;white-space:nowrap}
+.dm-cta{min-height:46px;border-radius:12px;border:0;background:var(--ink);color:var(--surface);font-weight:600;font-size:15px;cursor:pointer}
+.dm-cta.on{background:var(--go-soft);color:var(--go-ink);border:1.5px solid var(--go)}
+.evacts{display:flex;gap:8px}
+.evb{width:48px;height:42px;border-radius:10px;border:0;cursor:pointer;display:grid;place-items:center;color:#fff}
+.evb svg{width:22px;height:22px}
+.evb.y{background:var(--go)} .evb.n{background:#D92D3A}
+.evb:disabled{background:var(--surface-2);color:var(--muted);cursor:not-allowed}
+.evb.off{opacity:.35}
+.evstate{font-size:12.5px;font-weight:600}
+.evstate.y{color:var(--go-ink)} .evstate.n{color:var(--muted)}
+.gcard.declined{opacity:.55}
+.tabpanel{display:flex;flex-direction:column;gap:20px}
+.tabpanel[hidden]{display:none}
+.tab-title{font-size:26px;letter-spacing:-.01em;margin:2px 0 0;line-height:1.15}
+.bnav{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line);background:var(--surface);padding:6px 6px 10px}
+.bn{background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;font-size:11.5px;font-weight:500;color:var(--muted);cursor:pointer;border-radius:10px;min-height:48px}
+.bn[aria-current="page"]{color:var(--ink);font-weight:600}
+.bn:disabled{opacity:.4;cursor:not-allowed}
+.bn svg{width:24px;height:24px}
+.sn-sub{font-size:13.5px;color:var(--ink-2);margin-top:-4px}
+.sn-card{padding:0;overflow:hidden;gap:0}
+.sn-card svg{display:block;width:100%;height:auto}
+.sn-list{padding:6px 14px 10px}
+.sn-row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid var(--grid);font-size:12.5px;color:var(--ink-2);align-items:center}
+.sn-row:first-child{border-top:0}
+.sn-row b{color:var(--ink);font-size:13.5px}
+.sn-row .m{font-family:'IBM Plex Mono',ui-monospace,monospace;font-weight:600;color:var(--ink);white-space:nowrap}
+.lnk{background:none;border:0;padding:0;color:var(--accent-ink);font-size:12.5px;font-weight:600;cursor:pointer;text-align:left}
+.score-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.score{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 12px 10px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.score .n{font-size:26px;font-weight:600;letter-spacing:-.01em;line-height:1.15;color:var(--ink)}
+.score .n small{font-size:15px;font-weight:600;margin-left:2px}
+.score .t{font-size:12.5px;color:var(--ink-2)}
+.score .chip{align-self:flex-start;margin-top:6px}
+.score .ref{font-size:11px;color:var(--muted);margin-top:4px}
+.sec{display:flex;flex-direction:column;gap:10px}
+.sec-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.sec-h h2{font-size:15px;margin:0;font-weight:600}
+.sec-h .note{font-size:11.5px;color:var(--muted)}
+.card{background:var(--surface-2);border-radius:16px;padding:14px 15px;display:flex;flex-direction:column;gap:10px}
+
+.opp-card{padding:0;overflow:hidden}
+.day-strip{display:grid;grid-template-columns:repeat(7,1fr);padding:8px 6px 0;border-bottom:1px solid var(--grid)}
+.dbtn{background:none;border:0;border-bottom:3px solid transparent;padding:4px 0 7px;display:flex;flex-direction:column;align-items:center;gap:1px;font:inherit;color:var(--ink);cursor:pointer}
+.dbtn span{font-size:11.5px;color:var(--muted)} .dbtn b{font-size:15px;font-weight:600}
+.dbtn[aria-pressed="true"]{border-bottom-color:var(--ink)} .dbtn[aria-pressed="true"] span{color:var(--ink)}
+.dbtn.past{opacity:.35;cursor:default}
+.dbtn.today b{color:var(--accent-ink)}
+.dhead{background:var(--surface-2);padding:9px 14px;font-size:14.5px;font-weight:600}
+.wcard{display:grid;grid-template-columns:1fr 76px;gap:2px 12px;padding:12px 14px;border-bottom:1px solid var(--grid);align-items:start}
+.wcard:last-child{border-bottom:0}
+.wcard .wt{font-size:12px;color:var(--ink-2);font-family:'IBM Plex Mono',ui-monospace,monospace}
+.wcard .wz{font-size:15.5px;font-weight:600;margin-top:1px}
+.wcard .ws{font-size:12.5px;color:var(--ink-2)}
+.wcard .wtags{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.wcard .wmap{grid-column:2;grid-row:1 / span 4;width:76px;height:76px;border-radius:8px;background:var(--surface-2);border:1px solid var(--grid)}
+.wcard>*:not(.wmap){grid-column:1}
+.wcard.now{background:var(--accent-soft)}
+.wcard.dim{opacity:.55}
+.gold-ban{margin:10px 14px 0;border:1.5px solid var(--gold-line);background:var(--gold-soft);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.gold-ban .gt{display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:600;font-size:13.5px;color:var(--gold-ink)}
+.gold-ban .gs{font-size:12px;color:var(--ink-2)}
+.chip.gold{background:var(--gold);color:#fff}
+.chip.start{background:var(--accent-soft);color:var(--accent-ink)}
+.chip.goldl{background:var(--surface);color:var(--gold-ink);border:1px solid var(--gold-line)}
+.gold-ban details summary{cursor:pointer;font-size:12px;font-weight:600;color:var(--gold-ink);list-style:none}
+.gold-ban details summary::-webkit-details-marker{display:none}
+.gold-ban dl.kv{margin:6px 0 0}
+.gcard{margin:8px 14px;border:1.5px solid var(--gold-line);border-radius:14px;background:linear-gradient(135deg,var(--gold-soft),var(--surface));padding:12px;display:grid;grid-template-columns:1fr 76px;gap:2px 12px;align-items:start}
+.gcard .gt{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:4px}
+.gcard .wt{font-size:12px;color:var(--ink-2);font-family:'IBM Plex Mono',ui-monospace,monospace}
+.gcard .wz{font-size:15.5px;font-weight:600;margin-top:1px}
+.gcard .ws{font-size:12.5px;color:var(--ink-2)}
+.gcard .prem{font-size:13px;font-weight:600;color:var(--gold-ink);margin-top:4px}
+.gcard .wmap{grid-column:2;grid-row:1 / span 4;width:76px;height:76px;border-radius:8px;background:var(--surface);border:1px solid var(--gold-line)}
+.gcard .gact{grid-column:1 / span 2;margin-top:8px;display:flex;gap:8px;align-items:center;justify-content:space-between}
+.gcard .gact .left{font-size:11.5px;color:var(--muted)}
+.gbtn{min-height:38px;padding:0 16px;border-radius:10px;border:1.5px solid var(--gold);background:var(--gold);color:#fff;font-weight:600;font-size:13.5px;cursor:pointer}
+.gbtn.claimed{background:var(--surface);color:var(--gold-ink)}
+.gbtn:disabled{background:transparent;color:var(--muted);border:1.5px dashed var(--line);cursor:not-allowed}
+.gcard.lock{opacity:.9}
+.gnote{font-size:11.5px;color:var(--muted);margin-top:2px}
+.opp-list{display:flex;flex-direction:column}
+.opp{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:10px 12px;border-bottom:1px solid var(--grid);align-items:center}
+.opp:last-child{border-bottom:0}
+.opp .z{font-weight:600;font-size:13.5px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.opp .r{font-size:12px;color:var(--muted)}
+.opp .d{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:13.5px;font-weight:600;text-align:right;grid-row:1 / span 2;grid-column:2}
+.opp .d small{display:block;font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:11px;font-weight:500;color:var(--muted)}
+.opp .d.up{color:var(--go-ink)}
+.opp.here{background:var(--accent-soft);border-radius:12px;border-bottom:0;margin-bottom:6px;box-shadow:inset 3px 0 0 var(--accent)}
+.opp.here .z{color:var(--accent-ink)}
+.opp.here .r{color:var(--accent-ink);opacity:.85}
+.opp .tag{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:600;padding:2px 6px;border-radius:999px}
+.opp .tag.you{background:var(--accent);color:#fff}
+.opp .tag.best{background:var(--go);color:#fff}
+.opp.demoted .z,.opp.demoted .d{color:var(--muted)}
+.opp .flag{grid-column:1 / span 2;margin-top:4px}
+
+select{font:inherit;font-size:13px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:8px 10px;width:100%;min-height:40px}
+label.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.diag-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.diag-head .big{font-size:26px;font-weight:600;letter-spacing:-.01em}
+.cause{display:grid;grid-template-columns:22px 1fr auto;gap:2px 10px;padding:10px 0;border-top:1px solid var(--line);align-items:start}
+.cause .n{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11px;color:var(--muted);padding-top:2px}
+.cause .t{font-weight:600;font-size:13px}
+.cause .x{grid-column:2 / span 2;font-size:12.5px;color:var(--ink-2)}
+.cause .imp{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;font-weight:600;color:var(--warn-ink);white-space:nowrap}
+.bullets{display:flex;flex-direction:column;gap:10px}
+.bullet .bl{display:flex;justify-content:space-between;font-size:12px;color:var(--ink-2);margin-bottom:4px}
+.bullet .bl b{color:var(--ink);font-weight:600;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px}
+.bullet svg{display:block;width:100%;height:auto}
+
+.meter-row{display:flex;justify-content:space-between;font-size:12px;color:var(--ink-2)}
+.meter-row b{color:var(--ink);font-family:'IBM Plex Mono',ui-monospace,monospace}
+.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.fact .k{font-size:11px;color:var(--muted)} .fact .v{font-size:16px;font-weight:600}
+.legend{display:flex;gap:14px;font-size:11.5px;color:var(--ink-2);flex-wrap:wrap}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:3px;display:block}
+.seg{display:flex;gap:4px}
+.seg button{flex:1;border:1px solid var(--line);background:var(--surface);border-radius:999px;font-size:11.5px;padding:6px 0;cursor:pointer;color:var(--ink-2);min-height:32px}
+.seg button[aria-pressed="true"]{border-color:var(--ink);color:var(--ink);font-weight:600}
+.hint{font-size:12.5px;color:var(--ink-2)}
+.hint b{color:var(--ink)}
+.srow{display:flex;flex-direction:column;gap:3px;padding-top:8px;border-top:1px solid var(--line)}
+.srow .top{display:flex;justify-content:space-between;gap:10px;font-size:12.5px}
+.srow .top b{font-weight:600}
+.srow .top span{color:var(--muted);font-size:11.5px;text-align:right}
+.srow svg{display:block;width:100%;height:auto}
+.daytabs{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.daytabs button{position:relative;border:1px solid var(--line);background:var(--surface);border-radius:10px;font-size:12px;font-weight:600;color:var(--ink-2);padding:7px 0;min-height:34px;cursor:pointer}
+.daytabs button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+.daytabs button i{position:absolute;top:4px;right:5px;width:5px;height:5px;border-radius:50%;background:var(--accent)}
+.wins{display:flex;flex-wrap:wrap;gap:5px}
+.win{display:inline-flex;gap:5px;align-items:baseline;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px 9px;font-size:11.5px;color:var(--ink-2)}
+.win b{color:var(--ink);font-weight:600}
+.here-tag{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;font-weight:600;background:var(--accent);color:#fff;padding:1px 6px;border-radius:999px;margin-left:4px}
+.offer-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.offer-head .big{font-size:26px;font-weight:600;letter-spacing:-.01em}
+.expl{font-size:12.5px;color:var(--ink-2);margin:0}
+.foot{font-size:11px;color:var(--muted);text-align:center;margin-top:4px}
+
+.tip{position:absolute;z-index:5;pointer-events:none;background:var(--ink);color:var(--surface);border-radius:8px;padding:7px 9px;font-size:11.5px;line-height:1.35;max-width:220px;box-shadow:0 6px 18px rgba(0,0,0,.18)}
+.tip b{display:block;font-size:12px}
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <section class="panel" aria-label="Prototype controls">
+    <div>
+      <div class="eyebrow">Assignment 5 &middot; Uber Driver Dashboard</div>
+      <h1>Driver Home</h1>
+      <p class="lede">A working prototype of the one-screen driver dashboard. Pick one of three scenarios; the top card and everything beneath it recompute from the mock data.</p>
+    </div>
+    <div>
+      <h2 id="moments-h">Pick a scenario from Alex's week, Sep 21–27, 2026</h2>
+      <div class="moments" id="moments" role="group" aria-labelledby="moments-h"></div>
+    </div>
+    <div>
+      <h2>Why the top card shows this</h2>
+      <div class="trace" id="trace"></div>
+    </div>
+    <p class="about"><b>About the data.</b> Alex is a part-time driver who works 20&ndash;25 hours a week around a day job. Everything here comes from a seeded generator: 52 weeks of Alex's shifts across six zones, a zone-by-hour demand model, city-wide surge history, and 80 simulated part-time drivers over the same 52 weeks, so every comparison uses the same dates. No real Uber data is used.</p>
+    <p class="about"><b>Modelled assumptions.</b> Trip offers fall when a driver's cancellation rate passes 4% or their rating drops below 4.90. Declining offers lifts the average fare but costs waiting time, more so in quiet hours. Every "move" estimate counts the drive as unpaid time, using fixed drive times between zones.</p>
+  </section>
+
+  <div class="phone">
+    <div class="phone-scroll" id="phone-scroll">
+      <main class="app" id="app" aria-label="Driver app">
+
+        <!-- HOME -->
+        <div class="tabpanel" id="tab-home" data-tab="home">
+          <div class="app-head">
+            <div>
+              <div class="eyebrow">Driver Home</div>
+              <div class="hello" id="hello">Hi, Alex</div>
+              <div class="ctx" id="ctx"></div>
+            </div>
+            <span class="online-pill" id="online-pill"><i></i><span></span></span>
+          </div>
+          <section class="now-card" id="now-card" aria-live="polite" aria-label="Right now"></section>
+          <section class="sec" aria-labelledby="dm-h">
+            <div class="sec-h"><h2 id="dm-h">Demand near you</h2><span class="note">Live</span></div>
+            <div class="dm-sub" id="dm-sub"></div>
+            <div class="card dm-card" id="demand"></div>
+          </section>
+          <section class="hours" id="hours" aria-label="Hours logged today"></section>
+          <section class="sec" aria-labelledby="stand-h">
+            <div class="sec-h"><h2 id="stand-h">Your standing</h2><span class="note">Last 28 days</span></div>
+            <div class="score-grid" id="score-grid"></div>
+          </section>
+        </div>
+
+        <!-- EARNINGS -->
+        <div class="tabpanel" id="tab-earn" data-tab="earn" hidden>
+          <h1 class="tab-title">Earnings</h1>
+          <section aria-label="Earnings">
+            <div class="tabs" id="tabs" role="group" aria-label="Period"></div>
+            <div class="hero-label" id="hero-label"></div>
+            <div class="hero-row"><div class="hero" id="hero"></div></div>
+            <div class="split" id="split"></div>
+            <div class="chart" id="earn-chart"></div>
+            <details class="table" id="earn-table"></details>
+            <div class="eph" id="eph"></div>
+          </section>
+          <section class="sec" aria-labelledby="diag-h">
+            <div class="sec-h"><h2 id="diag-h">Why a shift landed where it did</h2></div>
+            <div class="card" id="diag">
+              <label class="sr" for="shift-pick">Choose a shift</label>
+              <select id="shift-pick"></select>
+              <div id="diag-body"></div>
+            </div>
+          </section>
+        </div>
+
+        <!-- OPPORTUNITIES -->
+        <div class="tabpanel" id="tab-opps" data-tab="opps" hidden>
+          <h1 class="tab-title">Opportunities</h1>
+          <section class="sec" aria-labelledby="surgenow-h">
+            <div class="sec-h"><h2 id="surgenow-h">Surging now</h2></div>
+            <div class="sn-sub" id="sn-sub"></div>
+            <div class="card sn-card" id="surgenow"></div>
+          </section>
+          <section class="sec" aria-labelledby="opp-h">
+            <div class="sec-h"><h2 id="opp-h">Options near you</h2><span class="note" id="opp-note"></span></div>
+            <div class="card opp-card"><div class="day-strip" id="opp-days" role="group" aria-label="Day"></div><div class="opp-list" id="opp-list"></div></div>
+          </section>
+          <section class="sec" aria-labelledby="surge-h">
+            <div class="sec-h"><h2 id="surge-h">Surge pricing by day</h2><span class="note" id="surge-note"></span></div>
+            <div class="card" id="surge"></div>
+          </section>
+          <section class="sec" aria-labelledby="map-h">
+            <div class="sec-h"><h2 id="map-h">Where and when it pays</h2><span class="note">Typical $/online hr</span></div>
+            <div class="card" id="heat"></div>
+          </section>
+        </div>
+
+        <!-- MENU -->
+        <div class="tabpanel" id="tab-menu" data-tab="menu" hidden>
+          <h1 class="tab-title">Menu</h1>
+          <section class="sec" aria-labelledby="limits-h">
+            <div class="sec-h"><h2 id="limits-h">Shift limits and rest</h2></div>
+            <div class="card" id="limits"></div>
+          </section>
+          <section class="sec cd-hide" aria-labelledby="week-h">
+            <div class="sec-h"><h2 id="week-h">Your week</h2><span class="note">Hours online, by day</span></div>
+            <div class="card" id="week"></div>
+          </section>
+          <section class="sec cd-hide" aria-labelledby="offers-h">
+            <div class="sec-h"><h2 id="offers-h">Your trip offers</h2><span class="note">4-week rolling, last 12 weeks</span></div>
+            <div class="card" id="offers"></div>
+          </section>
+        </div>
+
+        <div class="foot">Prototype &middot; mock data only</div>
+        <div class="tip" id="tip" role="tooltip" hidden></div>
+      </main>
+    </div>
+    <nav class="bnav" id="bnav" aria-label="Driver app"></nav>
+  </div>
+</div>
+
+<script>document.documentElement.setAttribute('data-theme','light');</script>
+<script>
+(function(){
+'use strict';
+
+/* =====================================================================
+   1. MOCK DATA GENERATOR (seeded, deterministic)
+   ===================================================================== */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function gauss(r){let u=0,v=0;while(!u)u=r();while(!v)v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const HOUR=3600000, DAY=86400000;
+function addDays(d,n){return new Date(d.getFullYear(),d.getMonth(),d.getDate()+n);}
+function at(day,h){return new Date(day.getFullYear(),day.getMonth(),day.getDate(),0,Math.round(h*60));}
+function sod(d){return new Date(d.getFullYear(),d.getMonth(),d.getDate());}
+function monday(d){const s=sod(d);return addDays(s,-((s.getDay()+6)%7));}
+function hourOf(d){return d.getHours()+d.getMinutes()/60;}
+
+const ZONES=[
+  {id:'dt',name:'Downtown',  fare:11.0,tripMin:16,tripKm:5.5},
+  {id:'mt',name:'Midtown',   fare:9.5, tripMin:13,tripKm:4.5},
+  {id:'ap',name:'Airport',   fare:26.0,tripMin:30,tripKm:22},
+  {id:'un',name:'University',fare:7.5, tripMin:11,tripKm:3.5},
+  {id:'wf',name:'Waterfront',fare:11.5,tripMin:15,tripKm:5},
+  {id:'ns',name:'Northside', fare:10.0,tripMin:17,tripKm:7}
+];
+const Z=Object.fromEntries(ZONES.map(z=>[z.id,z]));
+const TT={dt:{mt:8,ap:25,un:12,wf:10,ns:20},mt:{ap:20,un:10,wf:15,ns:14},ap:{un:28,wf:30,ns:18},un:{wf:18,ns:12},wf:{ns:26}};
+function travel(a,b){if(a===b)return 0;return (TT[a]&&TT[a][b])||(TT[b]&&TT[b][a])||30;}
+
+function bump(h,c,w,amp){let d=Math.abs(h-c);d=Math.min(d,24-d);return amp*Math.exp(-(d*d)/(2*w*w));}
+/* demand 0..1 for zone, weekday (0=Sun), hour of day */
+function demand(zid,dow,h){
+  if(h>=24){h-=24;dow=(dow+1)%7;}
+  const wkend=dow===0||dow===6, nightOut=dow===4||dow===5||dow===6;
+  let d;
+  switch(zid){
+    case 'dt': d=0.24+(wkend?bump(h,13,3,.25):bump(h,8,1.2,.42)+bump(h,17.6,1.5,.5)+bump(h,12.5,1,.18))+(nightOut?bump(h,23.6,1.8,.55):0);break;
+    case 'mt': d=0.30+bump(h,12.5,1.5,.25)+bump(h,18.5,2,.3)+(wkend?.08:0);break;
+    case 'ap': d=0.12+bump(h,7,1,.55)+bump(h,13.6,.9,.5)+bump(h,17.8,1,.55)+bump(h,22.5,.9,.35);break;
+    case 'un': d=0.14+bump(h,10,2,.14)+bump(h,15.5,1.5,.1)+(nightOut?bump(h,22.8,1.8,.5):0);break;
+    case 'wf': d=wkend?0.28+bump(h,14,3,.4)+bump(h,20,2,.38):0.18+bump(h,19.5,2,.32)+bump(h,12.5,1.2,.12);break;
+    default:   d=0.18+(wkend?bump(h,11,2.5,.15):bump(h,7.5,1,.42)+bump(h,17,1.2,.24));
+  }
+  if(h>=3&&h<5.5)d*=.45;
+  return clamp(d,.05,.98);
+}
+/* what a typical driver earns in a zone at a time: the "heatmap" reference */
+/* surge is a property of the market, not of one driver: every driver in a zone-hour sees the same multiplier */
+const ZI=Object.fromEntries(ZONES.map((z,i)=>[z.id,i]));
+function surgeP(d){return clamp((d-.5)*2.4,0,.9);}
+function surgeAt(zid,t){
+  const dt=new Date(t), h=dt.getHours(), d=demand(zid,dt.getDay(),h+.5), p=surgeP(d);
+  if(p<=0)return 1;
+  const dayN=Math.round(sod(dt).getTime()/DAY);
+  const r=mulberry32(((ZI[zid]+1)*1000003+dayN*97+h*7919)|0);
+  if(r()>=p)return 1;
+  return 1+(.25+.75*r())*(d-.4)*2;
+}
+const ACC_T=.8; /* typical acceptance rate in the city */
+function expected(zid,dow,h){
+  const z=Z[zid], d=demand(zid,dow,h);
+  const util=clamp(.28+.6*d,.1,.9)*(zid==='ap'?.82:1);
+  const surgeE=1+surgeP(d)*.625*Math.max(0,d-.4)*2;
+  const rate=(60/z.tripMin)*z.fare*surgeE*1.066;
+  return {d,util,rate,surgeE,epoh:util*rate};
+}
+/* a driver's standing: cancellations and a sliding rating reduce how many trip offers they receive (modelled assumption) */
+function standing(dr,t){
+  const cancel=dr.cancelAt?dr.cancelAt(t):dr.cancel, rating=dr.ratingAt?dr.ratingAt(t):dr.rating;
+  return {cancel,rating,mult:clamp(1-3*Math.max(0,cancel-.04)-.9*Math.max(0,4.9-rating),.6,1.03)};
+}
+function expectedAtRec(r){const s=new Date(r.s);return expected(r.zone,s.getDay(),hourOf(s)+r.dur/2);}
+
+function pickWeighted(w,r){const ks=Object.keys(w);let t=ks.reduce((a,k)=>a+w[k],0),x=r()*t;for(const k of ks){x-=w[k];if(x<=0)return k;}return ks[ks.length-1];}
+function chooseZone(dr,r,cur,sd){
+  const h=hourOf(sd),dow=sd.getDay();
+  const near=ZONES.filter(z=>travel(cur,z.id)<=20);
+  if(r()<dr.smart){let best=cur,bv=-1;near.forEach(z=>{const v=expected(z.id,dow,h+.5+travel(cur,z.id)/60).epoh-travel(cur,z.id)*.15;if(v>bv){bv=v;best=z.id;}});return best;}
+  if(r()<.22){const w={};near.forEach(z=>w[z.id]=dr.pref[z.id]||.01);return pickWeighted(w,r);}
+  return cur;
+}
+function simRecord(dr,r,sd,dur,zid){
+  const mid=sd.getTime()+dur*HOUR/2;
+  const e=expected(zid,sd.getDay(),hourOf(sd)+dur/2), z=Z[zid], st=standing(dr,mid);
+  const uT=clamp((.28+.6*e.d+gauss(r)*.07)*(zid==='ap'?.82:1),.08,.93);
+  const tripLen=z.tripMin*(.85+r()*.3);
+  const offT=uT*dur*60/tripLen/ACC_T;                       /* offers a typical driver gets here */
+  /* in busy hours a declined offer is replaced quickly; in quiet hours it is not */
+  const refill=(1+(1-dr.acc)*e.d*.6)/(1+(1-ACC_T)*e.d*.6);
+  const offers=Math.max(0,Math.round(offT*st.mult*refill+gauss(r)*.6));
+  let accepted=0,cancels=0;
+  for(let i=0;i<offers;i++)if(r()<dr.acc)accepted++;
+  for(let i=0;i<accepted;i++)if(r()<st.cancel)cancels++;
+  const trips=Math.min(accepted-cancels,Math.floor(dur*.95*60/tripLen));
+  const engaged=trips*tripLen/60;
+  const pick=1+.9*(ACC_T-dr.acc);                           /* declining the weakest offers lifts the average fare */
+  const mult=surgeAt(zid,mid);
+  const base=trips*z.fare*(.9+r()*.2)*pick;
+  const fare=base*mult, tips=fare*(r()<.6?.06+r()*.1:0);
+  let rc=0,rs=0;for(let i=0;i<trips;i++)if(r()<.7){rc++;rs+=r()<st.rating-4?5:4;}
+  const km=trips*(z.tripKm*(.9+r()*.2)+2)+Math.max(0,dur-engaged)*6;   /* trip + pickup km, plus light repositioning while waiting */
+  return {s:sd.getTime(),dur,zone:zid,engaged,trips,fare,tips,surge:base*(mult-1),mult,offers,accepted,cancels,rc,rs,offT,km};
+}
+let shiftSeq=0;
+function simShift(dr,r,startMs,lenH,plan){
+  let zone=plan?plan[0]:pickWeighted(dr.pref,r);
+  const recs=[];let t=startMs,left=lenH,i=0;
+  while(left>1e-6){
+    const dur=Math.min(1,left), sd=new Date(t);
+    if(i>0) zone=plan?plan[Math.min(i,plan.length-1)]:chooseZone(dr,r,zone,sd);
+    recs.push(simRecord(dr,r,sd,dur,zone));
+    t+=dur*HOUR;left-=dur;i++;
+  }
+  const id='s'+(shiftSeq++);
+  recs.forEach(x=>x.shift=id);
+  return {id,s:startMs,e:t,recs};
+}
+function shuffle(a,r){for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function genWeek(dr,r,wk){
+  const target=dr.hMin+r()*(dr.hMax-dr.hMin), tm=[];
+  const days=shuffle([0,1,2,3,4],r), n=2+(r()<.55?1:0);
+  for(let i=0;i<n;i++){const aft=r()<.2;tm.push({day:days[i],start:aft?13+r()*2:16.75+r()*1.75,len:3.5+r()*1.5});}
+  if(r()<.75){const late=r()<.35;tm.push({day:5,start:late?19.5+r()*1.5:9.5+r()*3,len:4.5+r()*1.5});}
+  if(r()<.45)tm.push({day:6,start:10.5+r()*2.5,len:3.5+r()*1.2});
+  const tot=tm.reduce((a,t)=>a+t.len,0),k=target/tot;
+  return tm.map(t=>{const len=Math.round(clamp(t.len*k,2.5,7)*4)/4;const start=at(addDays(wk,t.day),Math.round(t.start*4)/4);return simShift(dr,r,start.getTime(),len,null);});
+}
+function agg(recs){
+  const a={online:0,engaged:0,trips:0,fare:0,tips:0,surge:0,offers:0,accepted:0,cancels:0,rc:0,rs:0,offT:0,km:0};
+  recs.forEach(x=>{a.online+=x.dur;a.engaged+=x.engaged;a.trips+=x.trips;a.fare+=x.fare;a.tips+=x.tips;a.surge+=x.surge;a.offers+=x.offers;a.accepted+=x.accepted;a.cancels+=x.cancels;a.rc+=x.rc;a.rs+=x.rs;a.offT+=x.offT;a.km+=x.km||0;});
+  a.earn=a.fare+a.tips;
+  a.base=a.fare-a.surge;
+  a.epoh=a.online?a.earn/a.online:0;
+  a.util=a.online?a.engaged/a.online:0;
+  a.rate=a.engaged?a.earn/a.engaged:0;
+  a.acc=a.offers?a.accepted/a.offers:0;
+  a.offph=a.online?a.offers/a.online:0;          /* trip offers per online hour */
+  a.offIdx=a.offT?a.offers/a.offT:0;             /* offers vs a typical driver in the same zones and hours */
+  a.cancelRate=a.accepted?a.cancels/a.accepted:0;
+  a.rating=a.rc?a.rs/a.rc:0;
+  a.tph=a.online?a.trips/a.online:0;            /* completed trips per online hour */
+  a.kmph=a.online?a.km/a.online:0;
+  return a;
+}
+
+/* ---- Alex: habit-driven part-timer, 20-25 h/wk ---- */
+/* Alex's story: from mid-August, cancellations creep up (accepting, then cancelling long pickups) and the rating slides */
+const ramp=(t,a,b,v0,v1)=>v0+(v1-v0)*clamp((t-a)/(b-a),0,1);
+const ALEX={acc:.72,smart:.3,hMin:20,hMax:25,pref:{dt:.3,un:.22,ns:.24,mt:.14,wf:.06,ap:.04},
+  cancelAt:t=>ramp(t,new Date(2026,7,10).getTime(),new Date(2026,8,20).getTime(),.03,.09),
+  ratingAt:t=>ramp(t,new Date(2026,7,3).getTime(),new Date(2026,8,26).getTime(),4.94,4.82)};
+const rA=mulberry32(42);
+let ALEX_SHIFTS=[];
+for(let wk=new Date(2025,8,29);wk<new Date(2026,8,21);wk=addDays(wk,7)) ALEX_SHIFTS.push(...genWeek(ALEX,rA,wk));
+/* the final week is scripted so each demo moment has a real story behind it */
+const rF=mulberry32(777);
+[
+  [new Date(2026,8,21),17,   4,   ['un','un','ns','ns']],
+  [new Date(2026,8,22),14.67,5,   ['ns','ns','dt','dt','dt']],
+  [new Date(2026,8,24),17.5, 4,   ['dt','dt','mt','mt']],
+  [new Date(2026,8,25),18.17,6.33,['wf','wf','wf','dt','dt','dt','dt']],
+  [new Date(2026,8,26),9.42, 5,   ['wf','wf','wf','dt','dt']],
+  [new Date(2026,8,27),12,   10,  ['wf','wf','wf','mt','mt','dt','dt','wf','wf','wf']]
+].forEach(([d,h,len,plan])=>ALEX_SHIFTS.push(simShift(ALEX,rF,at(d,h).getTime(),len,plan)));
+
+/* ---- 80 comparable part-time drivers, same 52 weeks as Alex, so every comparison uses the same window on both sides ---- */
+const PEER_RECS=[];
+for(let i=0;i<80;i++){
+  const r=mulberry32(1000+i);
+  const pref={};ZONES.forEach(z=>pref[z.id]=.05+r());
+  const dr={acc:.6+r()*.35,smart:.1+.8*Math.pow(r(),1.2),hMin:18,hMax:26,pref,cancel:.015+r()*.06,rating:4.8+r()*.18};
+  const recs=[];
+  for(let wk=new Date(2025,8,29);wk<new Date(2026,8,28);wk=addDays(wk,7)) genWeek(dr,r,wk).forEach(s=>recs.push(...s.recs));
+  PEER_RECS.push(recs);
+}
+const PEER_CACHE={};
+/* distribution of peer metrics over exactly the window [s,e) */
+function peerDist(s,e){
+  const k=s+'|'+e;if(PEER_CACHE[k])return PEER_CACHE[k];
+  const aggs=PEER_RECS.map(rs=>agg(rs.filter(x=>x.s>=s&&x.s<e))).filter(a=>a.online>0);
+  const out={n:aggs.length};['epoh','util','rate','offph','cancelRate','rating'].forEach(m=>out[m]=aggs.map(a=>a[m]));
+  return PEER_CACHE[k]=out;
+}
+function median(a){if(!a.length)return 0;const s=[...a].sort((x,y)=>x-y),m=s.length>>1;return s.length%2?s[m]:(s[m-1]+s[m])/2;}
+function quantile(a,q){const s=[...a].sort((x,y)=>x-y);if(!s.length)return 0;const i=(s.length-1)*q,lo=Math.floor(i);return s[lo]+(s[Math.min(lo+1,s.length-1)]-s[lo])*(i-lo);}
+function pctBelow(v,arr){return Math.round(100*arr.filter(x=>x<v).length/arr.length);}
+
+/* ---- The demo moments ---- */
+const MOMENTS=[
+  {id:'login',tag:'Demand',when:'Wed Sep 23, 3:45 PM',blurb:'Alex opens the app at home in Northside, offline. Demand is running above normal in nearby Downtown and Midtown.',now:new Date(2026,8,23,15,45),boost:{},live:{dt:.24,mt:.15}},
+  {id:'gold',tag:'Gold',when:'Fri Sep 25, 6:25 PM',blurb:'Alex is a Gold driver and went online 15 minutes ago. A homecoming concert lets out near University tonight.',now:new Date(2026,8,25,18,25),boost:{},live:{},gold:true,metrics:{acc:.78,rating:4.94,cancelRate:.02,offIdx:.99}},
+  {id:'rest',tag:'Rest',when:'Sun Sep 27, 10:00 PM',blurb:'Alex reached the 10-hour limit and was taken offline for a 7-hour rest. Demand is starting to rise on the left side of the city.',now:new Date(2026,8,27,22,0),boost:{},live:{un:.26,mt:.18}}
+];
+
+/* Everything the app knows at a given moment: history clipped at "now" */
+function snapshot(m){
+  const now=m.now.getTime();
+  const shifts=[];
+  ALEX_SHIFTS.forEach(s=>{
+    if(s.s>=now)return;
+    const recs=[];
+    s.recs.forEach(r=>{
+      if(r.s>=now)return;
+      const end=r.s+r.dur*HOUR;
+      if(end<=now){recs.push(r);return;}
+      const f=(now-r.s)/(r.dur*HOUR);
+      recs.push({...r,dur:r.dur*f,engaged:r.engaged*f,trips:Math.round(r.trips*f),fare:r.fare*f,tips:r.tips*f,surge:r.surge*f,offers:Math.round(r.offers*f),accepted:Math.round(r.accepted*f),cancels:Math.round(r.cancels*f),rc:Math.round(r.rc*f),rs:Math.round(r.rc*f)*(r.rc?r.rs/r.rc:0),offT:r.offT*f,km:(r.km||0)*f,partial:true});
+    });
+    const e=Math.min(s.e,now);
+    shifts.push({id:s.id,s:s.s,e,recs,live:s.e>now});
+  });
+  const recs=shifts.flatMap(s=>s.recs);
+  const live=shifts.find(s=>s.live)||null;
+  return {m,now,shifts,recs,live};
+}
+
+/* =====================================================================
+   2. DECISION LOGIC: safety > opportunity > steady
+   ===================================================================== */
+const RULES={longDay:5,lateStart:22,lateEnd:5,lateMinHours:3,last24:9,noRestDays:6,horizon:2,oppRatio:1.15,oppMinGain:8,maxDrive:25,maxShift:10,restHrs:7};
+
+function consecutiveDays(snap){
+  const byDay=new Set(snap.recs.map(r=>sod(new Date(r.s)).getTime()));
+  let d=sod(new Date(snap.now));
+  if(!byDay.has(d.getTime()))d=addDays(d,-1);
+  let n=0;while(byDay.has(d.getTime())){n++;d=addDays(d,-1);}
+  return n;
+}
+/* Work period = online time since the last rest of RULES.restHrs+ hours. Hitting RULES.maxShift hours forces the driver offline until the rest is done. */
+function duty(snap){
+  const recs=snap.recs.slice().sort((a,b)=>a.s-b.s), REST=RULES.restHrs*HOUR, out=[];
+  for(let i=recs.length-1;i>=0;i--){
+    const end=recs[i].s+recs[i].dur*HOUR, nextStart=i===recs.length-1?snap.now:recs[i+1].s;
+    if(nextStart-end>=REST)break;
+    out.unshift(recs[i]);
+  }
+  const hours=out.reduce((t,r)=>t+r.dur,0), lastEnd=out.length?out[out.length-1].s+out[out.length-1].dur*HOUR:null;
+  const capped=hours>=RULES.maxShift-1e-6;
+  const until=capped?lastEnd+REST:null;
+  return {recs:out,hours,since:out.length?out[0].s:null,lastEnd,capped,until,cool:capped&&snap.now<until};
+}
+function wellbeing(snap){
+  const now=snap.now, nd=new Date(now), h=hourOf(nd);
+  const liveH=snap.live?agg(snap.live.recs).online:0;
+  const last24=snap.recs.filter(r=>r.s>=now-24*HOUR).reduce((a,r)=>a+r.dur,0);
+  const isLate=h>=RULES.lateStart||h<RULES.lateEnd;
+  const cons=consecutiveDays(snap);
+  const du=duty(snap);
+  const checks=[
+    {label:RULES.maxShift+' hrs online: forced offline',val:fmtH(Math.min(du.hours,RULES.maxShift)),hit:du.capped},
+    {label:'On for '+RULES.longDay+'+ hours this shift',val:fmtH(liveH),hit:liveH>=RULES.longDay},
+    {label:'Past 10 PM, 3+ hours in',val:fmtClock(nd),hit:isLate&&liveH>=RULES.lateMinHours},
+    {label:RULES.last24+'+ hours in the last 24',val:fmtH(last24),hit:last24>=RULES.last24},
+    {label:RULES.noRestDays+'+ days without a rest day',val:cons+(cons===1?' day':' days'),hit:cons>=RULES.noRestDays}
+  ];
+  return {liveH,last24,isLate,cons,checks,duty:du,tripped:checks.some(c=>c.hit)};
+}
+function opportunities(snap){
+  const nd=new Date(snap.now), dow=nd.getDay(), h=hourOf(nd), boost=snap.m.boost;
+  const lastRec=snap.recs.length?snap.recs.reduce((x,y)=>x.s>y.s?x:y):null;
+  const cur=snap.live?snap.live.recs[snap.live.recs.length-1].zone:(lastRec&&snap.now-(lastRec.s+lastRec.dur*HOUR)<2*HOUR?lastRec.zone:'ns');
+  const H=RULES.horizon;
+  const val=(z,hh)=>expected(z,dow,hh).epoh*((boost[z]&&boost[z].m)||1);
+  /* expected dollars earned in zone z between hour-of-day a and b (midpoint rule, 8 slices) */
+  const earnOver=(z,a,b)=>{if(b<=a)return 0;let s=0;for(let i=0;i<8;i++)s+=val(z,a+(b-a)*(i+.5)/8);return s/8*(b-a);};
+  const here=val(cur,h+.25);                       /* current $/hr, for context only */
+  const stay=earnOver(cur,h,h+H);
+  const list=ZONES.filter(z=>z.id!==cur&&travel(cur,z.id)<=RULES.maxDrive).map(z=>{
+    const mins=travel(cur,z.id), arr=h+mins/60;
+    const move=earnOver(z.id,arr,h+H);             /* the drive itself earns nothing */
+    return {zone:z.id,move,gain:move-stay,mins,arrive:arr,boost:boost[z.id]||null};
+  }).sort((a,b)=>b.move-a.move);
+  const best=list[0];
+  const qualifies=!!best&&best.move>=stay*RULES.oppRatio&&best.gain>=RULES.oppMinGain;
+  return {cur,here,stay,H,list,best,qualifies};
+}
+function decide(snap){
+  const wb=wellbeing(snap), op=opportunities(snap);
+  const gt=goldTop(snap,wb);
+  const state=wb.duty.cool?'cool':(!snap.live?'start':(wb.tripped?'warn':(gt?'gold':(op.qualifies?'go':'calm'))));
+  return {wb,op,state,gt};
+}
+
+/* =====================================================================
+   3. FORMATTING
+   ===================================================================== */
+const DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'], MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function money(v,dp){dp=dp==null?(Math.abs(v)<100?2:0):dp;return '$'+v.toLocaleString('en-US',{minimumFractionDigits:dp,maximumFractionDigits:dp});}
+function perHr(v){return '$'+v.toFixed(2)+'/hr';}
+function fmtH(h){const hh=Math.floor(h+1e-6),mm=Math.round((h-hh)*60);return mm?(hh?hh+'h '+mm+'m':mm+'m'):hh+'h';}
+function hrsWord(h){return (Math.round(h*10)/10)+' hrs';}
+function fmtClock(d){let h=d.getHours(),m=d.getMinutes();const ap=h>=12?'PM':'AM';h=h%12||12;return h+(m?':'+String(m).padStart(2,'0'):'')+' '+ap;}
+function fmtHour(h){h=((Math.round(h)%24)+24)%24;const ap=h>=12?'PM':'AM';return (h%12||12)+' '+ap;}
+function fmtRange(a,b){return fmtClock(new Date(a))+'–'+fmtClock(new Date(b));}
+function dayLabel(d){return DOW[d.getDay()]+' '+MON[d.getMonth()]+' '+d.getDate();}
+function pct(v){return Math.round(v*100)+'%';}
+
+const ICON={
+  go:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 19V5M12 5l-6 6M12 5l6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  warn:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>',
+  calm:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="2"/><path d="M8.5 12.2l2.4 2.4 4.6-4.8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+};
+ICON.star='<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2 6.3 20.3l1.2-6.4L2.8 9.5l6.4-.8z"/></svg>';
+ICON.gold=ICON.star;
+ICON.start='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8M15 7h6v6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+ICON.cool='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2.5" stroke="currentColor" stroke-width="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+const small=s=>s.replace('width="24" height="24"','width="12" height="12"');
+const STATE_LABEL={go:'Opportunity',warn:'Take a break',calm:'On pace',cool:'Cool-down',start:'Demand building',gold:'Gold offer'};
+
+/* =====================================================================
+   4. RENDER
+   ===================================================================== */
+const $=id=>document.getElementById(id);
+const UI={moment:MOMENTS[0].id,period:'today',shift:null,heat:'wk',resp:{},deadline:{},eph:'max',claims:{},tab:'home',dOff:1,online:{}};
+const OFFER_SECS=180;let offerTimer=null;
+let SNAP=null,DEC=null;
+
+function momentLabel(d){return `${DOW_FULL[d.getDay()]}, ${MON[d.getMonth()]} ${d.getDate()} · ${fmtClock(d)}`;}
+function renderMoments(){
+  $('moments').innerHTML=MOMENTS.map(m=>{
+    const st=decide(snapshot(m)).state;
+    return `<button class="moment" type="button" aria-pressed="${m.id===UI.moment}" data-m="${m.id}">
+      <span class="when">${momentLabel(m.now)}</span>
+      <span class="chip ${st}">${small(ICON[st])}${STATE_LABEL[st]}</span>
+      <span class="blurb">${m.blurb}</span></button>`;
+  }).join('');
+}
+
+function renderHeader(){
+  $('hello').innerHTML='Hi, Alex'+(SNAP.m.gold?' <span class="chip gold" style="vertical-align:middle;margin-left:6px">'+small(ICON.star)+'Gold driver</span>':'');
+  const nd=new Date(SNAP.now), cool=DEC.state==='cool', live=!!SNAP.live;
+  $('ctx').textContent=`${cool||!live?'Offline':Z[DEC.op.cur].name} · ${DOW[nd.getDay()]} ${MON[nd.getMonth()]} ${nd.getDate()} · ${fmtClock(nd)}`;
+  const pill=$('online-pill');
+  pill.classList.toggle('off',!live);
+  pill.querySelector('span').textContent=live?'Online · '+fmtH(DEC.wb.liveH):(cool?'Offline · Cool-down':'Offline');
+}
+const fmtHMS=ms=>{ms=Math.max(0,Math.ceil(ms/1000));return Math.floor(ms/3600)+':'+String(Math.floor(ms%3600/60)).padStart(2,'0')+':'+String(ms%60).padStart(2,'0');};
+function whenLabel(ms){const d=new Date(ms),n=new Date(SNAP.now);return fmtClock(d)+(sod(d).getTime()!==sod(n).getTime()?' '+DOW[d.getDay()]:'');}
+
+/* Hours logged today: a small strip under the top card */
+function renderHours(){
+  const du=DEC.wb.duty, M=RULES.maxShift, h=Math.min(du.hours,M), left=Math.max(0,M-du.hours);
+  const cls=du.capped?'max':(du.hours>=8?'near':'');
+  const foot=du.capped?`<span>Limit reached</span><span>Online again ${whenLabel(du.until)}</span>`:`<span>${du.hours?fmtH(left)+' left':'Full '+M+'h available'}</span><span>${RULES.restHrs}h rest after ${M}h</span>`;
+  $('hours').className='hours '+cls;
+  $('hours').innerHTML=`<div class="h-top"><span class="l">Hours logged today</span><span class="v"><b>${fmtH(h)}</b> of ${M}h</span></div>
+    <div class="h-bar" role="img" aria-label="${fmtH(h)} of ${M} hours logged"><i style="width:${100*h/M}%"></i></div>
+    <div class="h-foot">${foot}</div>`;
+}
+const TICK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+const XMARK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+function evButtons(id,block){
+  const st=UI.claims[id];
+  if(block)return `<span class="left" style="font-size:11.5px;color:var(--muted)">${block}</span>`;
+  return `<div class="evacts" role="group" aria-label="Respond to event slot">${st?`<span class="evstate ${st}">${st==='yes'?'Accepted':'Declined'}</span>`:''}<button class="evb y${st==='no'?' off':''}" type="button" data-ev="${id}" data-act="yes" aria-label="Accept slot" aria-pressed="${st==='yes'}">${TICK}</button><button class="evb n${st==='yes'?' off':''}" type="button" data-ev="${id}" data-act="no" aria-label="Decline slot" aria-pressed="${st==='no'}">${XMARK}</button></div>`;
+}
+/* live demand: the model's normal demand for this zone and hour, plus the live gap above it (scenario data). A "surge" is live demand at least 12 points above normal. */
+const DMXY={dt:[172,100],mt:[108,150],ap:[285,45],un:[48,178],wf:[255,150],ns:[112,44]};
+const dmCol=v=>v>=.70?'#D92D3A':v>=.55?'#8E2A7E':v>=.40?'#D98E00':null;
+const SURGE_GAP=.12;
+function liveDemand(snap,cur){
+  const nd=new Date(snap.now), dow=nd.getDay(), h=hourOf(nd), L=snap.m.live||{};
+  return ZONES.map(z=>{
+    const d0=demand(z.id,dow,h), gap=L[z.id]||0, lv=clamp(d0+gap,.05,.98), e0=expected(z.id,dow,h).epoh;
+    return {z:z.id,d0,gap,lv,e0,e:e0*(1+(lv/d0-1)*.5),mins:travel(cur,z.id),near:travel(cur,z.id)<=20,surging:gap>=SURGE_GAP};
+  });
+}
+function demandMap(cur,live){
+  let g='<defs>'+['#D92D3A','#8E2A7E','#D98E00'].map((c,i)=>`<radialGradient id="dg${i}"><stop offset="0" stop-color="${c}" stop-opacity=".6"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></radialGradient>`).join('')+'</defs>';
+  g+='<rect width="340" height="210" fill="var(--surface-2)"/><path d="M250 0H340V70Q300 60 270 90Q250 50 250 0Z" fill="var(--accent-soft)"/>';
+  g+='<g stroke="var(--line)" stroke-width="5" stroke-linecap="round" fill="none"><path d="M10 120 Q120 90 330 130"/><path d="M110 8 Q140 100 100 205"/><path d="M60 170 Q160 150 280 40"/><path d="M200 205 Q230 120 300 90"/></g>';
+  const hot=live.filter(x=>dmCol(x.lv));
+  hot.forEach(x=>{const [px,py]=DMXY[x.z],c=dmCol(x.lv);g+=`<circle cx="${px}" cy="${py}" r="${40+50*(x.lv-.4)}" fill="url(#dg${c==='#D92D3A'?0:c==='#8E2A7E'?1:2})"/>`;});
+  ZONES.forEach(z=>{const [px,py]=DMXY[z.id],x=hot.find(y=>y.z===z.id);
+    g+=`<circle cx="${px}" cy="${py}" r="4" fill="${x?dmCol(x.lv):'var(--muted)'}"/><text x="${px}" y="${py+16}" text-anchor="middle" font-size="10.5" fill="var(--ink-2)" font-weight="600">${z.name}</text>`;
+    if(x){const t=`${x.surging?'↑ ':''}${money(x.e,0)}/hr`,w=t.length*6.3+16;g+=`<rect x="${px-w/2}" y="${py-30}" width="${w}" height="20" rx="10" fill="${dmCol(x.lv)}"/><text x="${px}" y="${py-16}" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">${t}</text>`;}
+  });
+  const [cx,cy]=DMXY[cur];g+=`<circle cx="${cx}" cy="${cy}" r="11" fill="#fff" stroke="#131A22" stroke-width="2.5"/><path d="M${cx} ${cy-6}L${cx+4.5} ${cy+5}L${cx} ${cy+2.5}L${cx-4.5} ${cy+5}Z" fill="#131A22"/>`;
+  return `<svg viewBox="0 0 340 210" role="img" aria-label="Live city demand map">${g}</svg>`;
+}
+function demandSummary(snap,cur){
+  const live=liveDemand(snap,cur), near=live.filter(x=>x.near&&x.surging).sort((a,b)=>b.gap-a.gap);
+  const soft=near.length&&near[0].gap<.25;
+  const txt=!near.length?'No surge nearby. Demand is normal for this time of day.':(near.length===1?`${Z[near[0].z].name} is`:`${Z[near[0].z].name} and ${near.length-1} other nearby area${near.length>2?'s are':' is'}`)+(soft?' starting to surge in demand.':' surging in demand.');
+  return {live,near,txt};
+}
+function renderDemand(){
+  const cur=DEC.op.cur, D=demandSummary(SNAP,cur), cool=DEC.state==='cool';
+  $('dm-sub').textContent=D.txt;$('dm-sub').hidden=DEC.state==='start';
+  const rows=D.near.slice(0,3).map(x=>`<div class="dm-row"><span><b>${Z[x.z].name}</b>${x.z===cur?' <span class="here-tag">You\'re here</span>':''}<br>${x.z===cur?'Your current area':x.mins+' min · '+Math.round(x.mins*.45)+' km away'}</span><span class="m">${pct(x.d0)} → ${pct(x.lv)} demand<br><span style="font-weight:500;color:var(--muted)">${money(x.e0,0)} → ${money(x.e,0)}/hr</span></span></div>`).join('');
+  $('demand').innerHTML=`<div class="dm-map">${demandMap(cur,D.live)}</div>
+    <div class="dm-legend"><span>Normal</span><i></i><span>Surging</span><span style="margin-left:auto">Live demand by area</span></div>
+    ${rows?`<div>${rows}</div>`:''}
+    ${cool&&D.near.length?`<div class="sub-note">You're resting until ${whenLabel(DEC.wb.duty.until)}. This is for information only.</div>`:''}`;
+}
+function renderNow(){
+  if(offerTimer){clearInterval(offerTimer);offerTimer=null;}
+  const {state,wb,op}=DEC, card=$('now-card');
+  if(state==='cool'){
+    const du=wb.duty, REST=RULES.restHrs*HOUR;
+    card.className='now-card cool';
+    if(!UI.cdStart)UI.cdStart=Date.now();
+    card.innerHTML=`<div class="now-top"><span class="eyebrow">Right now</span><span class="chip cool">${small(ICON.cool)}${STATE_LABEL.cool}</span></div>
+      <div class="now-title">${ICON.cool}<span>Cool-down mode</span></div>
+      <div class="cd-time" id="cd-time"></div>
+      <div class="cd-sub">until you can go online · ${whenLabel(du.until)}</div>
+      <div class="rest-bar" role="img" aria-label="Rest progress"><i id="rest-i"></i></div>
+      <button class="lockbtn" type="button" disabled aria-disabled="true">${small(ICON.cool)}Go online is locked</button>
+      <div class="now-sub">You reached the ${RULES.maxShift}-hour limit. Rest ${RULES.restHrs} hours before your next shift.</div>`;
+    const tick=()=>{
+      const left=Math.max(0,du.until-(SNAP.now+(Date.now()-UI.cdStart)));
+      const t=$('cd-time');if(!t)return;t.textContent=fmtHMS(left);$('rest-i').style.width=(100*(1-left/REST))+'%';
+    };
+    tick();offerTimer=setInterval(tick,1000);
+    return;
+  }
+  if(state==='start'){
+    const on=!!UI.online[UI.moment], D=demandSummary(SNAP,op.cur), t=D.near[0];
+    card.className='now-card start';
+    card.innerHTML=`<div class="now-top"><span class="eyebrow">Right now</span><span class="chip start">${small(ICON.start)}${STATE_LABEL.start}</span></div>
+      <div class="now-title" style="font-size:22px">Demand is building nearby</div>
+      <div class="dm-sub">${D.txt}${t?` ${Z[t.z].name} is ${t.mins} min away, at ${pct(t.lv)} demand against ${pct(t.d0)} normal.`:''}</div>
+      <button class="dm-cta${on?' on':''}" type="button" data-online="${on?0:1}">${on?'You are online in '+Z[op.cur].name+' · tap to go offline':'Go online'}</button>`;
+    return;
+  }
+  if(state==='gold'){
+    const e=DEC.gt, w=windowStats(e.zone,new Date(SNAP.now).getDay(),e.a,e.b), typ=w.epoh, gold=typ*(1+e.prem), st=UI.claims[e.id];
+    card.className='now-card gold';
+    card.innerHTML=`<div class="now-top"><span class="eyebrow">Right now</span><span class="chip gold">${small(ICON.star)}Gold offer</span></div>
+      <div class="now-title">${ICON.star}<span>${e.name}</span></div>
+      <div class="now-meta" style="color:var(--gold-ink)">${e.venue} · ${fmtHour(e.a)} – ${fmtHour(e.b)} pickups</div>
+      <div class="cmp" role="group" aria-label="Expected earnings per hour">
+        <div class="cmp-cell"><div class="k">Typical in ${Z[e.zone].name}</div><div class="v">${money(typ,0)}<small style="font-size:12px;color:var(--muted)">/hr</small></div></div>
+        <div class="cmp-cell pick" style="border-color:var(--gold)"><div class="k">Gold slot</div><div class="v" style="color:var(--gold-ink)">${money(gold,0)}<small style="font-size:12px">/hr</small></div></div></div>
+      <div class="cmp-foot"><span>${Math.round(e.prem*100)}% premium on fares · ${e.left-(st==='yes'?1:0)} of ${e.of} slots left</span>${evButtons(e.id,'')}</div>
+      <div class="now-sub">${travel(op.cur,e.zone)} min · ${Math.round(travel(op.cur,e.zone)*.45)} km from ${Z[op.cur].name}. Fits within your ${RULES.maxShift}-hour limit.</div>`;
+    return;
+  }
+  card.className='now-card '+state;
+  const today=agg(SNAP.live?SNAP.live.recs:[]);
+  let title,stat,sub;
+  if(state==='warn'){
+    const why=wb.checks.filter(c=>c.hit).map(c=>c.label.toLowerCase());
+    title='Time to wrap up';
+    stat=wb.duty.hours>=8?`${fmtH(wb.duty.hours)} on · ${fmtH(RULES.maxShift-wb.duty.hours)} to the ${RULES.maxShift}h limit`:fmtH(wb.liveH)+' on · '+fmtClock(new Date(SNAP.now));
+    const b=op.best;
+    sub=`You've made ${money(today.earn)} this shift. `+(op.qualifies&&b?`${Z[b.zone].name} is paying more right now, but it's late in a long shift.`:`Rest now and tomorrow's shift starts fresh.`);
+  }else if(state==='go'){
+    const b=op.best, zn=Z[b.zone].name, here=Z[op.cur].name, resp=UI.resp[UI.moment];
+    const top=`<div class="now-top"><span class="eyebrow">Right now</span><span class="chip go">${small(ICON.go)}${STATE_LABEL.go}</span></div>`;
+    if(resp==='yes'){
+      const arrive=new Date(SNAP.now+b.mins*60000);
+      card.innerHTML=`<div class="now-top"><span class="eyebrow">Right now</span><span class="chip go">${small(ICON.go)}Accepted</span></div><div class="now-title">${ICON.go}<span>On your way to ${zn}</span></div>
+        <div class="now-sub">Arrive around ${fmtClock(arrive)}. Expected ${money(b.move,0)} over the next ${op.H} hrs.</div>
+        <button class="undo" type="button" data-resp="">Undo</button>`;
+    }else if(resp==='no'){
+      card.className='now-card calm';
+      card.innerHTML=`<div class="now-top"><span class="eyebrow">Right now</span><span class="chip calm">${small(ICON.calm)}Staying put</span></div>
+        <div class="now-title">${ICON.calm}<span>Staying in ${here}</span></div>
+        <div class="now-sub">Expected ${money(op.stay,0)} over the next ${op.H} hrs.</div>
+        <button class="undo" type="button" data-resp="">Undo</button>`;
+    }else if(resp==='expired'){
+      card.className='now-card calm';
+      card.innerHTML=`<div class="now-top"><span class="eyebrow">Right now</span><span class="chip calm">${small(ICON.calm)}Offer expired</span></div>
+        <div class="now-title">${ICON.calm}<span>Staying in ${here}</span></div>
+        <div class="now-sub">The ${zn} suggestion timed out. Expected ${money(op.stay,0)} here over the next ${op.H} hrs.</div>
+        <button class="undo" type="button" data-resp="">Show it again</button>`;
+    }else{
+      card.className='now-card go offer';
+      if(!UI.deadline[UI.moment])UI.deadline[UI.moment]=Date.now()+OFFER_SECS*1000;
+      card.innerHTML=`<div class="offer-h">We found an opportunity for you</div>
+        <div class="now-title">${ICON.go}<span>Head to ${zn}</span></div>
+        <div class="now-meta">${b.mins} min drive${b.boost?' · '+b.boost.why:''}</div>
+        <div class="cmp" role="group" aria-label="Expected earnings over the next ${op.H} hours">
+          <div class="cmp-cell"><div class="k">Stay in ${here}</div><div class="v">${money(op.stay,0)}</div></div>
+          <div class="cmp-cell pick"><div class="k">Go to ${zn}</div><div class="v">${money(b.move,0)}</div></div>
+        </div>
+        <div class="cmp-foot"><span>Expected earnings, next ${op.H} hrs</span><b>+${money(b.gain,0)}</b></div>
+        <div class="acts"><button class="no" type="button" data-resp="no">Decline</button><button class="yes" type="button" data-resp="yes">Accept</button></div>
+        <div class="timer"><div class="timer-bar" id="timer-bar"><i></i></div><div class="timer-t"><span>Offer expires in</span><b id="timer-t"></b></div></div>`;
+      const tick=()=>{
+        const left=Math.max(0,Math.ceil((UI.deadline[UI.moment]-Date.now())/1000));
+        const bar=$('timer-bar'),t=$('timer-t');if(!bar)return;
+        bar.querySelector('i').style.width=(100*left/OFFER_SECS)+'%';bar.classList.toggle('low',left<=30);
+        t.textContent=Math.floor(left/60)+':'+String(left%60).padStart(2,'0');
+        if(left<=0){UI.resp[UI.moment]='expired';renderNow();}
+      };
+      tick();offerTimer=setInterval(tick,1000);
+    }
+    return;
+  }else{
+    title="You're in a good spot";
+    stat=`About ${money(op.stay,0)} expected here over the next ${op.H} hrs`;
+    sub=`Once drive time is counted, nothing within ${RULES.maxDrive} minutes beats ${Z[op.cur].name} by enough to be worth moving.`;
+  }
+  card.innerHTML=`<div class="now-top"><span class="eyebrow">Right now</span><span class="chip ${state}">${small(ICON[state])}${STATE_LABEL[state]}</span></div>
+    <div class="now-title">${ICON[state]}<span>${title}</span></div>
+    <div class="now-stat">${stat}</div>
+    <div class="now-sub">${sub}</div>`;
+}
+
+function renderTrace(){
+  const {wb,op,state}=DEC;
+  if(state==='cool'){
+    const du=wb.duty;
+    $('trace').innerHTML=`<div class="trace-step"><h3><span>1 · Hard limit</span><span class="chip warn">Reached</span></h3>
+      <div class="trace-row"><span class="tick-yes">●</span><span>Hours online since last rest</span><span class="v">${fmtH(Math.min(du.hours,RULES.maxShift))} of ${RULES.maxShift}h</span></div>
+      <div class="trace-row"><span></span><span>Rest required</span><span class="v">${RULES.restHrs}h offline</span></div>
+      <div class="trace-row"><span></span><span>Can go online again</span><span class="v">${whenLabel(du.until)}</span></div></div>
+      <div class="trace-step"><h3><span>2 · Shown</span><span class="chip cool">${STATE_LABEL.cool}</span></h3><div class="trace-row"><span></span><span>The app takes the driver offline and locks going online until the rest is done. Only today's stats and performance are shown.</span><span></span></div></div>`;
+    return;
+  }
+  if(state==='start'){
+    const rows=liveDemand(SNAP,op.cur).sort((a,b)=>b.gap-a.gap||b.lv-a.lv).map(x=>`<div class="trace-row"><span class="${x.surging?'tick-yes':'tick-no'}">${x.surging?'●':'○'}</span><span>${Z[x.z].name}${x.near?'':' (far)'}</span><span class="v">${pct(x.d0)} → ${pct(x.lv)}</span></div>`).join('');
+    $('trace').innerHTML=`<div class="trace-step"><h3><span>1 · Offline</span><span class="chip neutral">Not driving</span></h3><div class="trace-row"><span></span><span>No shift in progress, so the safety and opportunity checks do not apply</span><span></span></div></div>
+      <div class="trace-step"><h3><span>2 · Live demand vs normal</span><span class="chip start">Surge nearby</span></h3>${rows}<div class="trace-row"><span></span><span>Normal demand for this hour, then live demand. ● means at least ${Math.round(SURGE_GAP*100)} points above normal.</span><span></span></div></div>
+      <div class="trace-step"><h3><span>3 · Shown</span><span class="chip start">${STATE_LABEL.start}</span></h3><div class="trace-row"><span></span><span>The top card names the nearby areas surging in demand and offers Go online; the map below shows it.</span><span></span></div></div>`;
+    return;
+  }
+  if(state==='gold'){
+    const G=goldElig(SNAP), e=DEC.gt;
+    $('trace').innerHTML=`<div class="trace-step"><h3><span>1 · Safety check</span><span class="chip neutral">Clear</span></h3><div class="trace-row"><span class="tick-no">○</span><span>Hours online this shift</span><span class="v">${fmtH(wb.duty.hours)} of ${RULES.maxShift}h</span></div></div>
+      <div class="trace-step"><h3><span>2 · Gold standard</span><span class="chip gold">Met</span></h3>${G.rows.map(x=>`<div class="trace-row"><span class="tick-no">${x.ok?'✓':'✗'}</span><span>${x.k}, ${x.need}</span><span class="v">${x.you}</span></div>`).join('')}</div>
+      <div class="trace-step"><h3><span>3 · Event slot</span><span class="chip gold">Fits</span></h3><div class="trace-row"><span></span><span>${e.name}, ${fmtHour(e.a)} to ${fmtHour(e.b)}: projected hours stay under the ${RULES.maxShift}h limit</span><span class="v">+${Math.round(e.prem*100)}%</span></div></div>
+      <div class="trace-step"><h3><span>4 · Shown</span><span class="chip gold">Gold offer</span></h3><div class="trace-row"><span></span><span>A Gold driver with a slot that fits gets the event offer in the top card, with tick to accept and X to decline.</span><span></span></div></div>`;
+    return;
+  }
+  const tick=(hit)=>hit?'<span class="tick-yes" aria-label="triggered">●</span>':'<span class="tick-no" aria-label="not triggered">○</span>';
+  const s1=wb.checks.map(c=>`<div class="trace-row">${tick(c.hit)}<span>${c.label}</span><span class="v">${c.val}</span></div>`).join('');
+  const b=op.best;
+  const s2=`<div class="trace-row"><span></span><span>Stay in ${Z[op.cur].name}, next ${op.H} hrs</span><span class="v">${money(op.stay,0)}</span></div>
+    <div class="trace-row"><span></span><span>Best within ${RULES.maxDrive} min: ${b?Z[b.zone].name+', after a '+b.mins+' min unpaid drive':'none'}</span><span class="v">${b?money(b.move,0):'–'}</span></div>
+    <div class="trace-row">${tick(op.qualifies)}<span>At least ${Math.round((RULES.oppRatio-1)*100)}% and ${money(RULES.oppMinGain,0)} better over ${op.H} hrs</span><span class="v">${b?(b.gain>=0?'+':'−')+money(Math.abs(b.gain),0)+' ('+(b.move/op.stay>=1?'+':'')+Math.round((b.move/op.stay-1)*100)+'%)':'–'}</span></div>`;
+  const res={warn:'Safety wins the slot. Any opportunity drops to the list below, marked.',go:'No safety flag, and a real gain nearby: the opportunity takes the slot.',calm:'No safety flag, no gain worth the drive: a quiet confirmation.'}[state];
+  $('trace').innerHTML=`
+    <div class="trace-step"><h3><span>1 · Safety check</span><span class="chip ${wb.tripped?'warn':'neutral'}">${wb.tripped?'Tripped':'Clear'}</span></h3>${s1}</div>
+    <div class="trace-step"><h3><span>2 · Opportunity check</span><span class="chip ${op.qualifies?'go':'neutral'}">${op.qualifies?'Found':'None'}</span></h3>${s2}</div>
+    <div class="trace-step"><h3><span>3 · Shown</span><span class="chip ${state}">${STATE_LABEL[state]}</span></h3><div class="trace-row"><span></span><span>${res}</span><span></span></div></div>`;
+}
+
+/* ---------- Band 2: earnings ---------- */
+const PERIODS=[['today','Today'],['week','Week'],['month','Month'],['quarter','Quarter'],['year','Year']];
+function periodBuckets(p){
+  const nd=new Date(SNAP.now), b=[];
+  if(p==='today'){
+    const recs=DEC.wb.duty.recs.length?DEC.wb.duty.recs:(SNAP.live?SNAP.live.recs:SNAP.recs.filter(r=>r.s>=sod(nd).getTime()));
+    recs.forEach(r=>b.push({label:fmtHour(hourOf(new Date(r.s))).replace(' ',''),full:fmtRange(r.s,r.s+r.dur*HOUR),recs:[r]}));
+    return {start:sod(nd),label:'Today, total earnings so far',buckets:b};
+  }
+  if(p==='week'){
+    const w=monday(nd);
+    for(let i=0;i<7;i++){const d=addDays(w,i),e=addDays(w,i+1);b.push({label:DOW[d.getDay()][0],full:dayLabel(d),future:d>nd,recs:SNAP.recs.filter(r=>r.s>=d.getTime()&&r.s<e.getTime())});}
+    return {start:w,label:'This week, total earnings so far',buckets:b};
+  }
+  if(p==='month'||p==='quarter'){
+    const start=p==='month'?new Date(nd.getFullYear(),nd.getMonth(),1):new Date(nd.getFullYear(),Math.floor(nd.getMonth()/3)*3,1);
+    let w=monday(start);
+    while(w<=nd){const s=w<start?start:w,e=addDays(w,7);b.push({label:MON[s.getMonth()]+' '+s.getDate(),full:'Week of '+MON[s.getMonth()]+' '+s.getDate(),recs:SNAP.recs.filter(r=>r.s>=s.getTime()&&r.s<e.getTime())});w=e;}
+    return {start,label:p==='month'?'This month ('+MON[nd.getMonth()]+'), total earnings so far':'This quarter (Q'+(Math.floor(nd.getMonth()/3)+1)+'), total earnings so far',buckets:b,sparse:p==='quarter'};
+  }
+  const start=new Date(nd.getFullYear(),nd.getMonth()-11,1);
+  for(let i=0;i<12;i++){const s=new Date(start.getFullYear(),start.getMonth()+i,1),e=new Date(s.getFullYear(),s.getMonth()+1,1);b.push({label:MON[s.getMonth()],full:MON[s.getMonth()]+' '+s.getFullYear(),recs:SNAP.recs.filter(r=>r.s>=s.getTime()&&r.s<e.getTime())});}
+  return {start,label:'Last 12 months, total earnings',buckets:b,sparse:true};
+}
+function peakHour(recs){
+  const by={};recs.forEach(r=>{const h=new Date(r.s).getHours();(by[h]=by[h]||[]).push(r);});
+  let best=null;Object.keys(by).forEach(h=>{const a=agg(by[h]);if(a.online<(recs.length>8?1.5:.3))return;if(!best||a.epoh>best.epoh)best={h:+h,epoh:a.epoh};});
+  return best;
+}
+function renderEarnings(){
+  $('tabs').innerHTML=PERIODS.map(([k,l])=>`<button class="tab" type="button" data-p="${k}" aria-pressed="${UI.period===k}">${l}</button>`).join('');
+  const P=periodBuckets(UI.period);
+  const recs=P.buckets.flatMap(x=>x.recs), a=agg(recs);
+  $('hero-label').textContent=P.label;
+  $('hero').textContent=money(a.earn);
+  $('split').innerHTML=`<span class="pill fare"><b>${money(a.base)}</b>fares</span><span class="pill surge"><b>${money(a.surge)}</b>surge</span><span class="pill tips"><b>${money(a.tips)}</b>tips</span><span class="pill trip"><b>${a.trips}</b>trips</span>`;
+  renderEph(P,recs,a);
+  drawBars($('earn-chart'),P);
+  $('earn-table').innerHTML=`<summary>Show as table</summary><table><thead><tr><th>Period</th><th>Earned</th><th>Hours</th><th>$/hr</th></tr></thead><tbody>${
+    P.buckets.filter(x=>!x.future).map(x=>{const g=agg(x.recs);return `<tr><td>${x.full}</td><td>${money(g.earn)}</td><td>${g.online?g.online.toFixed(1):'0'}</td><td>${g.online?g.epoh.toFixed(2):'–'}</td></tr>`;}).join('')}</tbody></table>`;
+}
+
+/* ---------- Earnings per online hour: the north-star block ---------- */
+function benchText(P,a,per){per=per||UI.period;
+  if(!a.online)return '';
+  if(per==='today'){
+    const prior=completedShifts().filter(s=>s.s>=SNAP.now-56*DAY).map(s=>agg(s.recs).epoh), usual=median(prior), d=a.epoh/usual-1;
+    return `<span class="chip ${d>=-.05?'go':'neutral'}">${Math.abs(d)<.05?'On par':d>0?'Ahead':'Behind'}</span><span>${Math.abs(d)<.05?'Level with':Math.round(Math.abs(d)*100)+'% '+(d>0?'above':'below')} your usual ${money(usual)}/hr per shift</span>`;
+  }
+  const pd=peerDist(P.start.getTime(),SNAP.now), p=pctBelow(a.epoh,pd.epoh);
+  return `<span class="chip ${p>=50?'go':'neutral'}">${p>=50?'Above':'Below'} median</span><span>Beats ${p}% of similar part-time drivers over the same dates</span>`;
+}
+function liveWhy(a){
+  if(UI.period!=='today'||!SNAP.live||a.online<.75)return '';
+  const prior=completedShifts().filter(s=>s.s>=SNAP.now-56*DAY).map(s=>agg(s.recs).epoh), usual=median(prior);
+  if(a.epoh>=usual*.95)return '';
+  return `<details class="why-live"><summary>Why is this shift slow?</summary>${splitHTML(slowSplit(SNAP.live.recs,usual))}</details>`;
+}
+function renderEph(P,recs,a){
+  const pk=peakHour(recs);
+  const eph=`<div class="eph-card">
+      <div class="k-row"><span class="k">Earnings per online hour</span><button type="button" class="info-btn" data-info aria-expanded="${!!UI.ephInfo}" aria-label="How this is calculated">i</button></div>
+      <div class="v">${a.online?money(a.epoh):'–'}<small>${a.online?' /hr':''}</small></div>
+      ${UI.ephInfo?`<div class="info-box"><b>How we calculate this</b>Everything you earned (fares, surge and tips) divided by the time you were online, including time spent waiting for a trip.${a.online?`<span class="calc">${money(a.earn)} ÷ ${fmtH(a.online)} online = ${money(a.epoh)}/hr</span>`:''}${pk?`Your best hour in this period was ${fmtHour(pk.h)}, at ${money(pk.epoh,0)}/hr.`:''}</div>`:''}
+      <div class="bench-line">${benchText(P,a)}</div>
+      ${liveWhy(a)}
+    </div>`;
+  const tiles=`<div class="mtiles">
+      <div class="mtile"><div class="k">Hours online</div><div class="v">${a.online?fmtH(a.online):'–'}</div></div>
+      <div class="mtile"><div class="k">Rides accepted</div><div class="v">${a.accepted} <small>of ${a.offers} offers</small></div></div>
+      <div class="mtile"><div class="k">Acceptance rate</div><div class="v">${a.offers?pct(a.acc):'–'}</div></div>
+      <div class="mtile"><div class="k">Km driven</div><div class="v">${Math.round(a.km)} <small>km</small></div></div>
+    </div>`;
+  const tabs=`<div class="subtabs" role="group" aria-label="Earnings per hour detail">
+      <button type="button" data-eph="max" aria-pressed="${UI.eph==='max'}">Maximize earnings</button>
+      <button type="button" data-eph="perf" aria-pressed="${UI.eph==='perf'}">How you've performed</button>
+    </div>`;
+  const cool=DEC.state==='cool';
+  $('eph').innerHTML=eph+tiles+(cool?'':tabs)+`<div class="card">${!cool&&UI.eph==='max'?maximizeHTML():performedHTML(P,recs,a)}</div>`;
+}
+
+/* What would raise Alex's $/hr: levers estimated from the last 4 weeks */
+function maximizeHTML(){
+  const recs=SNAP.recs.filter(r=>r.s>=SNAP.now-28*DAY), a=agg(recs), hrs=a.online;
+  if(!hrs)return '<div class="sub-note">Not enough driving in the last 4 weeks to suggest changes.</div>';
+  const levers=[];
+  /* 1. where and when */
+  const swaps={};
+  recs.forEach(r=>{
+    const sd=new Date(r.s), h=hourOf(sd)+r.dur/2, dow=sd.getDay(), cur=expected(r.zone,dow,h).epoh;
+    let best=null;ZONES.forEach(z=>{if(z.id===r.zone||travel(r.zone,z.id)>20)return;const v=expected(z.id,dow,h).epoh;if(!best||v>best.v)best={z:z.id,v};});
+    if(best&&best.v>cur*1.1){const wk=dow===0||dow===6?'weekend':'weekday',k=r.zone+'>'+best.z+'>'+wk;const o=swaps[k]||(swaps[k]={from:r.zone,to:best.z,wk,gain:0,dur:0,cur:0,best:0,hs:[]});o.gain+=(best.v-cur)*r.dur;o.dur+=r.dur;o.cur+=cur*r.dur;o.best+=best.v*r.dur;o.hs.push(Math.floor(hourOf(sd)));}
+  });
+  const top=Object.values(swaps).sort((x,y)=>y.gain-x.gain)[0];
+  if(top){
+    const hs=top.hs.sort((x,y)=>x-y), lo=hs[Math.floor(hs.length*.2)], hi=hs[Math.floor(hs.length*.8)]+1;
+    levers.push({t:`Drive in ${Z[top.to].name} instead of ${Z[top.from].name}`,g:top.gain/hrs,
+      x:`On ${top.wk}s around ${fmtHour(lo)}–${fmtHour(hi)}, ${Z[top.to].name} (${travel(top.from,top.to)} min away) usually pays ${money(top.best/top.dur,0)}/hr; ${Z[top.from].name} pays ${money(top.cur/top.dur,0)}/hr. You spent ${fmtH(top.dur)} there in the last 4 weeks.`});
+  }
+  /* 2. offer flow: cancellations and rating */
+  if(a.offIdx<.95){
+    const bits=[];if(a.cancelRate>.04)bits.push(`your cancellation rate is ${pct(a.cancelRate)}; keep it under 4%`);if(Math.round(a.rating*100)/100<4.9)bits.push(`your rating is ${a.rating.toFixed(2)}; get it back above 4.90`);
+    levers.push({t:'Cancel fewer accepted trips',g:a.epoh*(Math.min(1/a.offIdx,1.25)-1)*.8,
+      x:`You get ${pct(1-a.offIdx)} fewer offers than drivers in the same zones and hours. ${bits.length?bits.join(', and ').replace(/^./,c=>c.toUpperCase())+'.':''}`});
+  }
+  /* 3. acceptance in quiet hours */
+  const quiet=recs.filter(r=>expectedAtRec(r).d<.45), q=agg(quiet);
+  if(q.offers>=10&&q.acc<ACC_T-.03){
+    const factor=(ACC_T/q.acc)/(1+.9*(ACC_T-q.acc));
+    if(factor>1)levers.push({t:'Accept more offers in quiet hours',g:q.earn*(factor-1)/hrs,
+      x:`In slow periods you accepted ${pct(q.acc)} of offers. When trips are scarce, a skipped offer means a long wait for the next one. In busy hours, being choosy is fine.`});
+  }
+  /* 4. surge timing */
+  let eS=0;recs.forEach(r=>eS+=(1-1/expectedAtRec(r).surgeE)*r.dur);eS/=hrs;
+  const share=a.fare?a.surge/a.fare:0;
+  if(share<eS*.85){
+    const main=Object.entries(recs.reduce((m,r)=>(m[r.zone]=(m[r.zone]||0)+r.dur,m),{})).sort((x,y)=>y[1]-x[1])[0][0];
+    const nd=new Date(SNAP.now), hist=surgeHistory(nd).filter(zh=>zh.win&&zh.win.b<=22&&travel(main,zh.zone)<=20).sort((x,y)=>y.winDays-x.winDays)[0];
+    levers.push({t:'Be in position before surge starts',g:(eS-share)*a.epoh,
+      x:`Surge made up ${pct(share)} of your fares; typical for your zones and hours is ${pct(eS)}.`+(hist?` On ${DOW_FULL[nd.getDay()]}s, ${Z[hist.zone].name} surges ${fmtHour(hist.win.a)}–${fmtHour(hist.win.b)} on ${hist.winDays} of the last 8 weeks. Arrive before it starts.`:'')});
+  }
+  const list=levers.filter(l=>l.g>=.25).sort((x,y)=>y.g-x.g).slice(0,4);
+  if(!list.length)return `<div class="sub-note">You're already close to what your zones and hours can pay. Keep doing what you're doing.</div>`;
+  const reach=a.epoh+list.reduce((t,l)=>t+l.g,0);
+  return `<div class="reach"><span>Last 4 weeks <b>${money(a.epoh)}/hr</b></span><span>Possible <b>${money(reach)}/hr</b></span></div>
+    <div>${list.map((l,i)=>`<details class="lever-d"><summary><span class="t">${l.t}</span><span class="g">+${money(l.g)}/hr</span></summary><div class="x">${l.x}</div></details>`).join('')}</div>
+    <div class="sub-note">Tap a row for details. Gains overlap, so “possible” is an upper estimate.</div>`;
+}
+
+/* You vs the top 20% of earners in the same zones, over comparable time */
+function performedHTML(P,recs,a){
+  if(!a.online)return '<div class="sub-note">No driving in this period to compare.</div>';
+  const zones=new Set(recs.map(r=>r.zone));
+  let filt,desc;
+  if(UI.period==='today'){
+    const nd=new Date(SNAP.now), dow=nd.getDay(), hs=recs.map(r=>hourOf(new Date(r.s))), lo=Math.floor(Math.min(...hs)), hi=Math.ceil(Math.max(...hs.map((h,i)=>h+recs[i].dur)));
+    filt=r=>{const d=new Date(r.s),h=hourOf(d);return r.s>=SNAP.now-56*DAY&&r.s<sod(nd).getTime()&&d.getDay()===dow&&h>=lo-1&&h<hi+1&&zones.has(r.zone);};
+    desc=`${DOW_FULL[dow]}s, ${fmtHour(lo)}–${fmtHour(hi)}, last 8 weeks`;
+  }else{
+    filt=r=>r.s>=P.start.getTime()&&r.s<SNAP.now&&zones.has(r.zone);desc='same dates';
+  }
+  const minH=UI.period==='today'?1:Math.max(1,a.online*.25);
+  const peers=PEER_RECS.map(rs=>{const x=rs.filter(filt);return {recs:x,a:agg(x)};}).filter(p=>p.a.online>=minH).sort((x,y)=>y.a.epoh-x.a.epoh);
+  if(peers.length<5)return '<div class="sub-note">Not enough comparable drivers for this period yet.</div>';
+  const n=Math.max(3,Math.round(peers.length*.2)), top=agg(peers.slice(0,n).flatMap(p=>p.recs));
+  const zoneNames=[...zones].map(z=>Z[z].name).join(', ');
+  const rows=[
+    ['Earnings per online hour',a.epoh,top.epoh,v=>money(v),1,true],
+    ['Trips per online hour',a.tph,top.tph,v=>v.toFixed(1),1],
+    ['Trip offers per hour',a.offph,top.offph,v=>v.toFixed(1),1],
+    ['Acceptance rate',a.acc,top.acc,pct,0],
+    ['Cancellation rate',a.cancelRate,top.cancelRate,pct,-1],
+    ['Time on a trip',a.util,top.util,pct,1],
+    ['Km driven per online hour',a.kmph,top.kmph,v=>Math.round(v)+' km',0]
+  ];
+  const body=rows.map(([l,y,t,f,dir,hero])=>{
+    const cls=!dir?'':(dir*(y-t)>=-Math.abs(t)*.03?'good':'bad');
+    return `<tr class="${hero?'north':''}"><td>${l}</td><td class="you ${cls}">${f(y)}</td><td>${f(t)}</td></tr>`;}).join('');
+  return `<div class="sub-note">Compared with the top 20% of earners (${n} drivers) in ${zoneNames}, ${desc}.</div>
+    <table class="perf"><thead><tr><th>Metric</th><th>You</th><th>Top earners</th></tr></thead><tbody>${body}</tbody></table>
+    <div class="sub-note">Green: at or above top earners. Orange: the gap to close. Acceptance and km are context only: turning down poor offers can pay, and more km isn't better on its own.</div>`;
+}
+function niceMax(v){if(v<=0)return 10;const p=Math.pow(10,Math.floor(Math.log10(v))),n=v/p;return (n<=1?1:n<=2?2:n<=2.5?2.5:n<=5?5:10)*p;}
+function drawBars(host,P){
+  const W=364,H=150,L=34,R=4,T=14,B=22,iw=W-L-R,ih=H-T-B;
+  const vals=P.buckets.map(x=>agg(x.recs));
+  const mx=niceMax(Math.max(...vals.map(v=>v.earn),1));
+  const n=P.buckets.length, band=iw/n, bw=Math.min(24,band*.62);
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Earnings by ${UI.period==='today'?'hour':'period'}, bar chart">`;
+  [0,.5,1].forEach(f=>{const y=T+ih-ih*f;s+=`<line x1="${L}" x2="${W-R}" y1="${y}" y2="${y}" stroke="var(--grid)" stroke-width="1"/><text x="${L-6}" y="${y+3.5}" text-anchor="end" font-size="10" fill="var(--muted)" style="font-variant-numeric:tabular-nums">${money(mx*f,0)}</text>`;});
+  let maxI=-1,maxV=-1;vals.forEach((v,i)=>{if(v.earn>maxV){maxV=v.earn;maxI=i;}});
+  P.buckets.forEach((bk,i)=>{
+    const v=vals[i], cx=L+band*i+band/2, x=cx-bw/2, h=ih*v.earn/mx, y=T+ih-h;
+    const isLast=i===P.buckets.map(q=>!q.future&&q.recs.length).lastIndexOf(true);
+    if(h>0){const r=Math.min(4,h,bw/2);s+=`<path d="M${x},${T+ih} V${y+r} Q${x},${y} ${x+r},${y} H${x+bw-r} Q${x+bw},${y} ${x+bw},${y+r} V${T+ih} Z" fill="var(--accent)" opacity="${isLast||P.buckets.length<3?1:.55}"/>`;}
+    else if(bk.future){s+=`<line x1="${x}" x2="${x+bw}" y1="${T+ih-.5}" y2="${T+ih-.5}" stroke="var(--line)" stroke-width="2" stroke-dasharray="3 3"/>`;}
+    const showLbl=!P.sparse||i%2===0||i===n-1;
+    if(showLbl)s+=`<text x="${cx}" y="${H-6}" text-anchor="middle" font-size="10" fill="var(--muted)">${bk.label}</text>`;
+    if(i===maxI&&maxV>0)s+=`<text x="${cx}" y="${y-5}" text-anchor="middle" font-size="10" font-weight="600" fill="var(--ink-2)">${money(v.earn,0)}</text>`;
+    const tip=`${bk.full}|${bk.future?'Not yet':money(v.earn)+' earned'}|${v.online?hrsWord(v.online)+' online · '+money(v.epoh)+'/hr':(bk.future?'':'Rest day')}`;
+    s+=`<rect x="${L+band*i}" y="${T}" width="${band}" height="${ih+B}" fill="transparent" data-tip="${tip}" tabindex="0" aria-label="${tip.replace(/\|/g,', ')}"/>`;
+  });
+  host.innerHTML=s+'</svg>';
+}
+
+/* ---------- Band 3a: options near you ---------- */
+const MAPXY={dt:[38,38],mt:[30,52],ap:[64,12],un:[18,66],wf:[60,58],ns:[34,14]};
+function miniMap(best,cur,gold){
+  let g='<line x1="6" y1="28" x2="70" y2="46" stroke="var(--line)" stroke-width="3"/><line x1="26" y1="6" x2="44" y2="70" stroke="var(--line)" stroke-width="3"/>';
+  ZONES.forEach(z=>{const [x,y]=MAPXY[z.id];const b=z.id===best,c=z.id===cur;
+    g+=`<circle cx="${x}" cy="${y}" r="${b?7:4}" fill="${b?(gold?'var(--gold)':'var(--go)'):'var(--muted)'}" opacity="${b?1:.55}"/>`+(c?`<circle cx="${x}" cy="${y}" r="${b?11:8}" fill="none" stroke="var(--accent)" stroke-width="2"/>`:'');});
+  return `<svg class="wmap" viewBox="0 0 76 76" role="img" aria-label="${Z[best].name} on the city map">${g}</svg>`;
+}
+const GOLD_STD={rating:4.90,cancel:.04,acc:.70};
+/* mock live events near each zone this week; slot = the post-event window where a premium applies (hours, 24+ = after midnight) */
+const EVENTS=[
+  {id:'e1',day:0,name:'Evening classes let out',venue:'University Quad',type:'College',zone:'un',a:21,b:23,prem:.15,left:14,of:30},
+  {id:'e2',day:1,name:'Harbor Hawks vs Ridgeview',venue:'Downtown Arena',type:'Sports',zone:'dt',a:21.5,b:23.5,prem:.30,left:12,of:40},
+  {id:'e3',day:2,name:'Finals week: library closes',venue:'University Library',type:'College',zone:'un',a:23,b:25,prem:.20,left:9,of:25},
+  {id:'e4',day:3,name:'Nova Reyes, live',venue:'Waterfront Amphitheatre',type:'Concert',zone:'wf',a:22.5,b:24.5,prem:.35,left:8,of:35},
+  {id:'e5',day:4,name:'Homecoming Concert',venue:'University Hall',type:'Concert',zone:'un',a:22,b:24,prem:.40,left:10,of:30},
+  {id:'e6',day:5,name:'Metro FC vs Eastside United',venue:'Downtown Arena',type:'Sports',zone:'dt',a:21.5,b:23.5,prem:.30,left:6,of:40},
+  {id:'e7',day:6,name:'Jazz in the Park',venue:'Waterfront Park',type:'Live event',zone:'wf',a:17,b:19,prem:.25,left:15,of:30},
+  {id:'e8',day:6,name:'Comedy Night',venue:'Downtown Theatre',type:'Live event',zone:'dt',a:21.5,b:23.5,prem:.25,left:11,of:25}
+];
+function curMetrics(snap){
+  const a=agg(snap.recs.filter(r=>r.s>=snap.now-28*DAY&&r.s<=snap.now));
+  const o=snap.m.metrics;if(o)Object.assign(a,o);
+  return a;
+}
+function goldElig(snap){
+  snap=snap||SNAP;
+  const a=curMetrics(snap), r2=Math.round(a.rating*100)/100;
+  const rows=[
+    {k:'Star rating',need:'at least '+GOLD_STD.rating.toFixed(2),you:r2.toFixed(2),ok:r2>=GOLD_STD.rating},
+    {k:'Cancellation rate',need:'at most '+pct(GOLD_STD.cancel),you:pct(a.cancelRate),ok:a.cancelRate<=GOLD_STD.cancel},
+    {k:'Acceptance rate',need:'at least '+pct(GOLD_STD.acc),you:pct(a.acc),ok:a.acc>=GOLD_STD.acc}
+  ];
+  return {rows,ok:rows.every(x=>x.ok)};
+}
+/* can this driver take an event slot? returns a reason string when not */
+function evBlock(e,snap,wb,G,isToday){
+  if(!G.ok)return 'Locked';
+  if(isToday){
+    if(wb.tripped)return 'Not offered late in a long shift';
+    const nowH=hourOf(new Date(snap.now)), hrs=wb.duty.hours+(snap.live?Math.max(0,e.b-nowH):Math.max(0,e.b-Math.max(nowH,e.a)));
+    if(hrs>RULES.maxShift+1e-6)return 'Passes your '+RULES.maxShift+'h limit';
+  }
+  return '';
+}
+function goldTop(snap,wb){
+  const G=goldElig(snap);if(!G.ok)return null;
+  const nd=new Date(snap.now), dow=(nd.getDay()+6)%7, nowH=hourOf(nd);
+  return EVENTS.filter(e=>e.day===dow&&e.b>nowH&&!evBlock(e,snap,wb,G,true)&&!(UI.claims[e.id]==='no')).sort((x,y)=>y.prem-x.prem)[0]||null;
+}
+const OPP_WINDOWS=[[6,10],[10,14],[14,18],[18,22],[22,26]];
+function windowStats(zid,dow,a,b){
+  let e=0,sg=1,d=0,n=0;
+  for(let h=a;h<b;h+=1){const x=expected(zid,(dow+Math.floor((h+.5)/24))%7,(h+.5)%24);e+=x.epoh;d+=x.d;sg=Math.max(sg,x.surgeE);n++;}
+  return {epoh:e/n,d:d/n,surge:sg};
+}
+function renderOpps(){
+  const {op,wb}=DEC, nd=new Date(SNAP.now), today=sod(nd), wk=monday(nd);
+  if(UI.oppFor!==today.getTime()){UI.oppFor=today.getTime();UI.oppDay=(today.getDay()+6)%7;}
+  const days=[...Array(7)].map((_,i)=>addDays(wk,i));
+  $('opp-days').innerHTML=days.map((d,i)=>{const past=d<today;return `<button class="dbtn${past?' past':''}${d.getTime()===today.getTime()?' today':''}" type="button" data-i="${i}" aria-pressed="${i===UI.oppDay}" ${past?'disabled':''}><span>${DOW[d.getDay()][0]}</span><b>${d.getDate()}</b></button>`;}).join('');
+  $('opp-days').onclick=e=>{const b=e.target.closest('.dbtn');if(!b||b.disabled)return;UI.oppDay=+b.dataset.i;renderOpps();};
+  const day=days[UI.oppDay], isToday=day.getTime()===today.getTime(), dow=day.getDay(), cur=op.cur;
+  const km=m=>Math.round(m*.45);
+  const out=[`<div class="dhead">${DOW_FULL[dow]}, ${MON[day.getMonth()]} ${day.getDate()}</div>`];
+  if(isToday){
+    const rows=[`<div class="opp here"><div class="z">${Z[op.cur].name}<span class="tag you">You're here</span></div><div class="r">Stay put · about ${money(op.here,0)}/hr right now</div><div class="d">${money(op.stay,0)}<small>next ${op.H} hrs</small></div></div>`];
+    const list=[...op.list].sort((x,y)=>Math.round(y.gain)-Math.round(x.gain)||x.mins-y.mins);
+    list.slice(0,2).forEach((o,i)=>{
+      const good=o.gain>=RULES.oppMinGain&&o.move>=op.stay*RULES.oppRatio, dem=wb.tripped&&o.gain>0, g=Math.round(o.gain);
+      const reason=o.boost?`${o.boost.why} · ${o.boost.m}× surge`:(g>0?`Picks up around ${fmtHour(o.arrive+.5)}`:g===0?`About the same as staying`:`Earns less than staying`);
+      const best=i===0&&g>0&&!dem;
+      rows.push(`<div class="opp ${dem?'demoted':''}"><div class="z">${Z[o.zone].name}${best?'<span class="tag best">Best next</span>':''}</div><div class="r">${o.mins} min · ${km(o.mins)} km away · ${reason}</div><div class="d ${good&&!dem?'up':''}">${g>0?'+':g<0?'−':'±'}${money(Math.abs(g),0)}<small>${money(o.move,0)} total</small></div>${dem&&good?`<div class="flag"><span class="chip warn">${small(ICON.warn)}Late in a long shift</span></div>`:''}</div>`);
+    });
+    out.push(`<div class="dhead" style="font-size:12px;font-weight:500;color:var(--ink-2)">Right now · top 2 options, next ${op.H} hrs, drive included</div>`,rows.join(''));
+  }
+  const nowH=hourOf(nd), near=ZONES.filter(z=>travel(cur,z.id)<=20);
+  const items=OPP_WINDOWS.filter(([a,b])=>!isToday||b>nowH).map(([a,b])=>{
+    const st=near.map(z=>({z:z.id,...windowStats(z.id,dow,a,b)})).sort((x,y)=>y.epoh-x.epoh), best=st[0], mine=st.find(x=>x.z===cur);
+    const nowWin=isToday&&a<=nowH&&nowH<b;
+    const tags=[best.surge>=1.15?`<span class="chip warn">Surge up to ${best.surge.toFixed(1)}×</span>`:'',best.d>=.55?'<span class="chip go">Busy</span>':(best.d<.3?'<span class="chip neutral">Quiet</span>':'<span class="chip neutral">Steady</span>')].join('');
+    const where=best.z===cur?`Your current area`:`${travel(cur,best.z)} min · ${km(travel(cur,best.z))} km from ${Z[cur].name}`;
+    const vs=best.z!==cur&&mine?`<div class="ws">${Z[cur].name}: ${money(mine.epoh,0)}/hr</div>`:'';
+    return {a,html:`<div class="wcard${nowWin?' now':''}"><div class="wt">${fmtHour(a)} – ${fmtHour(b)}${nowWin?' · now':''}</div><div class="wz">${Z[best.z].name}</div><div class="ws">About ${money(best.epoh,0)}/hr typical</div><div class="ws">${where}</div>${vs}<div class="wtags">${tags}</div>${miniMap(best.z,cur)}</div>`};
+  });
+  /* gold event slots: premium offers for drivers above the standard */
+  const G=goldElig(), evs=EVENTS.filter(e=>e.day===UI.oppDay&&(!isToday||e.b>nowH));
+  const duHrs=wb.duty.hours, left=Math.max(0,RULES.maxShift-duHrs);
+  evs.forEach(e=>{
+    const w=windowStats(e.zone,dow,e.a,e.b), typ=w.epoh, gold=typ*(1+e.prem);
+    const st=UI.claims[e.id], leftN=e.left-(st==='yes'?1:0), block=evBlock(e,SNAP,wb,G,isToday);
+    items.push({a:e.a,html:`<div class="gcard${G.ok?'':' lock'}${st==='no'?' declined':''}"><div><div class="gt"><span class="chip gold">${small(ICON.star)}Gold</span><span class="chip neutral">${e.type}</span></div>
+      <div class="wt">${fmtHour(e.a)} – ${fmtHour(e.b)} pickups</div><div class="wz">${e.name}</div><div class="ws">${e.venue} · ${Z[e.zone].name}</div>
+      <div class="ws">${e.zone===cur?'Your current area':travel(cur,e.zone)+' min · '+km(travel(cur,e.zone))+' km from '+Z[cur].name}</div>
+      <div class="prem">+${Math.round(e.prem*100)}% · about ${money(gold,0)}/hr vs ${money(typ,0)} typical</div></div>${miniMap(e.zone,cur,true)}
+      <div class="gact"><span class="left">${leftN} of ${e.of} slots left</span>${evButtons(e.id,block)}</div></div>`});
+  });
+  items.sort((x,y)=>x.a-y.a);
+  const goldBan=`<div class="gold-ban"><div class="gt"><span>${small(ICON.star)} Gold event slots</span><span class="chip ${G.ok?'gold':'goldl'}">${G.ok?'Unlocked':'Locked'}</span></div>
+    <div class="gs">${G.ok?'You meet the standard. Tick a slot to accept it and earn a premium on top of your usual fares near live events.':'Reach the standard to claim premium slots near sports games, concerts, live events and college let-outs.'}</div>
+    <details><summary>The standard, last 28 days</summary><dl class="kv">${G.rows.map(x=>`<dt>${x.k} (${x.need})</dt><dd style="color:${x.ok?'var(--go-ink)':'var(--warn-ink)'}">${x.you}${x.ok?' ✓':''}</dd>`).join('')}</dl></details></div>`;
+  out.splice(1,0,goldBan);
+  out.push(...(items.length?items.map(x=>x.html):['<div class="dhead" style="font-weight:500;color:var(--ink-2)">No more time windows today</div>']));
+  $('opp-list').innerHTML=out.join('');
+  $('opp-note').textContent='Best area within 20 min · typical $/online hr';
+}
+
+/* ---------- Band 3b: shift diagnosis ---------- */
+function completedShifts(){return SNAP.shifts.filter(s=>!s.live&&s.recs.length).sort((a,b)=>b.s-a.s);}
+function diagnose(sh){
+  const a=agg(sh.recs), hrs=a.online;
+  let eU=0,eR=0,eE=0,eS=0,eD=0;sh.recs.forEach(r=>{const e=expectedAtRec(r);eU+=e.util*r.dur;eR+=e.rate*r.dur;eE+=e.epoh*r.dur;eS+=(1-1/e.surgeE)*r.dur;eD+=e.d*r.dur;});
+  eU/=hrs;eR/=hrs;eE/=hrs;eS/=hrs;eD/=hrs;
+  const startZone=sh.recs[0].zone, zonesUsed=[...new Set(sh.recs.map(r=>r.zone))];
+  let best=null;
+  ZONES.filter(z=>travel(startZone,z.id)<=20).forEach(z=>{
+    let v=0;sh.recs.forEach(r=>{const s=new Date(r.s);v+=expected(z.id,s.getDay(),hourOf(s)+r.dur/2).epoh*r.dur;});v/=hrs;
+    if(!best||v>best.v)best={zone:z.id,v};
+  });
+  const prior=completedShifts().filter(s=>s.s<sh.s&&s.s>=sh.s-56*DAY).map(s=>agg(s.recs).epoh);
+  const usual=prior.length>3?median(prior):median(peerDist(sh.s-28*DAY,sh.s).epoh);
+  const recent=agg(SNAP.recs.filter(r=>r.s>=sh.s-28*DAY&&r.s<sh.e));   /* standing going into this shift */
+  const causes=[];
+  if(best&&!zonesUsed.includes(best.zone)&&best.v>=eE*1.15){
+    causes.push({t:'Where and when you drove',imp:(best.v-eE)*hrs,
+      x:`${zonesUsed.map(z=>Z[z].name).join(' and ')} usually ${zonesUsed.length>1?'pay':'pays'} about ${money(eE,0)}/hr at these hours. ${Z[best.zone].name}, ${travel(startZone,best.zone)} min from where you started, usually pays about ${money(best.v,0)}/hr in the same window.`});
+  }
+  if(a.util<eU*.92){
+    const fewer=a.offIdx<.92, busy=eD>=.55;
+    let x=`You were on a trip ${pct(a.util)} of the time; drivers in the same zones and hours average ${pct(eU)}.`;
+    if(fewer)x+=` You got ${a.offph.toFixed(1)} offers an hour, ${pct(1-a.offIdx)} fewer than a typical driver here`+(recent.cancelRate>.05||recent.rating<4.88?`, which lines up with your ${pct(recent.cancelRate)} cancellation rate and ${recent.rating.toFixed(2)} rating over the last 4 weeks.`:'.');
+    if(a.acc<ACC_T-.03)x+=busy?` You accepted ${a.accepted} of ${a.offers} offers; in busy hours a skipped offer is replaced quickly, so being choosy cost little.`:` You accepted ${a.accepted} of ${a.offers} offers; in quiet hours a skipped offer means a long wait for the next one, so taking more would likely have paid.`;
+    causes.push({t:fewer?'Fewer trip offers':'Time between trips',imp:(eU-a.util)*a.rate*hrs,x});
+  }
+  if(a.rate<eR*.92){
+    const sh_=a.fare?a.surge/a.fare:0;
+    causes.push({t:'Pay per trip hour',imp:(eR-a.rate)*a.util*hrs,
+      x:`While on a trip you made ${money(a.rate,0)}/hr against a typical ${money(eR,0)}/hr here. Surge was ${pct(sh_)} of your fares against about ${pct(eS)} typical for these zones and hours`+(sh_<eS*.7?', so you were mostly outside the surge windows.':', so shorter fares did most of the damage.')});
+  }
+  causes.sort((p,q)=>q.imp-p.imp);
+  return {a,eU,eR,eE,best,usual,causes:causes.filter(c=>c.imp>=3),zonesUsed};
+}
+function bullet(label,you,typ,max,fmt){
+  const W=320,H=16,x=v=>W*clamp(v/max,0,1);
+  return `<div class="bullet"><div class="bl"><span>${label}</span><span><b>${fmt(you)}</b> vs ${fmt(typ)} typical</span></div>
+  <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${label}: ${fmt(you)} versus ${fmt(typ)} typical">
+    <rect x="0" y="4" width="${W}" height="8" rx="4" fill="var(--grid)"/>
+    <rect x="0" y="4" width="${Math.max(8,x(you))}" height="8" rx="4" fill="var(--accent)"/>
+    <line x1="${x(typ)}" x2="${x(typ)}" y1="0" y2="${H}" stroke="var(--ink)" stroke-width="2"/>
+  </svg></div>`;
+}
+
+/* Why a shift is slow: split the gap to your usual $/hr into zone & time, the market today, and how you drove.
+   zone & time = what your zones usually pay at these hours minus your usual
+   market      = how far drivers in the same zones and hours today are above/below normal
+   your driving = you vs drivers in the same zones and hours today                      (the three add up exactly) */
+function slowSplit(recs,usual){
+  const a=agg(recs), hrs=a.online;
+  let E=0;recs.forEach(r=>E+=expectedAtRec(r).epoh*r.dur);E/=hrs;
+  const zones=[...new Set(recs.map(r=>r.zone))];
+  /* peers in the same zone, same day, within an hour of each of your records */
+  const peer=[];PEER_RECS.forEach(rs=>rs.forEach(q=>{if(q.s>=SNAP.now)return;if(recs.some(r=>r.zone===q.zone&&Math.abs(q.s-r.s)<HOUR))peer.push(q);}));
+  const pa=agg(peer);let pE=0;peer.forEach(q=>pE+=expectedAtRec(q).epoh*q.dur);pE=pa.online?pE/pa.online:0;
+  const ok=pa.online>=2, f=ok?pa.epoh/pE:1;
+  const startZone=recs[0].zone;let best=null;
+  ZONES.filter(z=>travel(startZone,z.id)<=20).forEach(z=>{let v=0;recs.forEach(r=>{const d=new Date(r.s);v+=expected(z.id,d.getDay(),hourOf(d)+r.dur/2).epoh*r.dur;});v/=hrs;if(!best||v>best.v)best={zone:z.id,v};});
+  const lo=hourOf(new Date(recs[0].s)), hi=lo+(recs[recs.length-1].s+recs[recs.length-1].dur*HOUR-recs[0].s)/HOUR;
+  return {a,usual,E,f,ok,pa,best,zones,lo:Math.floor(lo),hi:Math.ceil(hi),
+    parts:[{k:'zone',t:'Zone & time',v:E-usual},{k:'market',t:'Market today',v:E*(f-1)},{k:'you',t:'Your driving',v:a.epoh-E*f}]};
+}
+function splitHTML(S){
+  const sg=v=>(v>=0?'+':'−')+money(Math.abs(v))+'/hr';
+  const kv=rows=>`<dl class="kv">${rows.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>`;
+  const zn=S.zones.map(z=>Z[z].name).join(' + '), win=`${fmtHour(S.lo)}–${fmtHour(S.hi)}`;
+  const det={
+    zone:kv([[`${zn}, ${win}, usually`,money(S.E)+'/hr'],['Your usual',money(S.usual)+'/hr']].concat(S.best&&!S.zones.includes(S.best.zone)&&S.best.v>S.E*1.1?[[`${Z[S.best.zone].name} (${travel(S.zones[0],S.best.zone)} min), usually`,money(S.best.v)+'/hr']]:[])),
+    market:S.ok?kv([['Drivers here today',money(S.E*S.f)+'/hr'],['Same zones & hours, usually',money(S.E)+'/hr']]):'<div class="sub-note">Too few drivers here today to compare.</div>',
+    you:kv([['You',money(S.a.epoh)+'/hr'],['Drivers here today',money(S.E*S.f)+'/hr'],['Offers per hour',`${S.a.offph.toFixed(1)} vs ${S.ok?S.pa.offph.toFixed(1):'–'}`],['Cancellations',`${pct(S.a.cancelRate)} vs ${S.ok?pct(S.pa.cancelRate):'–'}`],['Time on a trip',`${pct(S.a.util)} vs ${S.ok?pct(S.pa.util):'–'}`]])
+  };
+  const max=Math.max(...S.parts.map(p=>Math.abs(p.v)),1);
+  return `<div class="split3">${S.parts.map(p=>`<details class="why"><summary><span class="wl">${p.t}</span><span class="wbar"><i class="${p.v<0?'neg':'pos'}" style="width:${Math.max(4,48*Math.abs(p.v)/max)}%;${p.v<0?'right:50%':'left:50%'}"></i></span><span class="wv ${p.v<0?'neg':'pos'}">${sg(p.v)}</span></summary>${det[p.k]}</details>`).join('')}</div>`;
+}
+function renderDiag(){
+  const list=completedShifts().slice(0,12);
+  if(!UI.shift||!list.find(s=>s.id===UI.shift))UI.shift=list[0]&&list[0].id;
+  $('shift-pick').innerHTML=list.map(s=>{const a=agg(s.recs);return `<option value="${s.id}" ${s.id===UI.shift?'selected':''}>${dayLabel(new Date(s.s))} · ${fmtRange(s.s,s.e)} · ${money(a.earn,0)}</option>`;}).join('');
+  const sh=list.find(s=>s.id===UI.shift);if(!sh){$('diag-body').innerHTML='';return;}
+  const D=diagnose(sh), diff=D.a.epoh/D.usual-1;
+  const verdict=Math.abs(diff)<.05?`<span class="chip neutral">About your usual</span>`:diff<0?`<span class="chip warn">${Math.round(-diff*100)}% below your usual ${money(D.usual,0)}/hr</span>`:`<span class="chip go">${Math.round(diff*100)}% above your usual ${money(D.usual,0)}/hr</span>`;
+  $('diag-body').innerHTML=`
+    <div class="diag-head"><span class="big">${money(D.a.epoh)}/hr</span>${verdict}</div>
+    ${splitHTML(slowSplit(sh.recs,D.usual))}
+    <div class="sub-note">Tap a row for the numbers behind it.</div>`;
+}
+
+/* ---------- Band 3c: your week (wellbeing) ---------- */
+function renderWeek(){
+  const nd=new Date(SNAP.now), w=monday(nd), wb=DEC.wb;
+  const days=[];
+  for(let i=0;i<7;i++){
+    const d=addDays(w,i),e=addDays(w,i+1);
+    let day=0,late=0;
+    SNAP.recs.filter(r=>r.s>=d.getTime()&&r.s<e.getTime()).forEach(r=>{const h=hourOf(new Date(r.s));(h>=22||h<5)?late+=r.dur:day+=r.dur;});
+    days.push({d,day,late,tot:day+late,future:d>nd,today:sod(nd).getTime()===d.getTime()});
+  }
+  const tot=days.reduce((a,x)=>a+x.tot,0), lateTot=days.reduce((a,x)=>a+x.late,0);
+  const W=364,H=120,L=24,T=12,B=22,iw=W-L-4,ih=H-T-B,mx=8,band=iw/7,bw=22;
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Hours online each day this week">`;
+  [0,4,8].forEach(v=>{const y=T+ih-ih*v/mx;s+=`<line x1="${L}" x2="${W-4}" y1="${y}" y2="${y}" stroke="var(--grid)"/><text x="${L-6}" y="${y+3.5}" text-anchor="end" font-size="10" fill="var(--muted)">${v}h</text>`;});
+  days.forEach((x,i)=>{
+    const cx=L+band*i+band/2,bx=cx-bw/2;
+    const hD=ih*Math.min(x.day,mx)/mx,hL=ih*Math.min(x.late,mx)/mx;
+    let y=T+ih;
+    if(hD>0){const top=y-hD;s+=`<rect x="${bx}" y="${top}" width="${bw}" height="${hD}" rx="${hL>0?0:3}" fill="var(--accent)"/>`;y=top-(hL>0?2:0);}
+    if(hL>0){s+=`<path d="M${bx},${y} V${y-hL+3} Q${bx},${y-hL} ${bx+3},${y-hL} H${bx+bw-3} Q${bx+bw},${y-hL} ${bx+bw},${y-hL+3} V${y} Z" fill="var(--late)"/>`;}
+    if(!x.tot&&!x.future)s+=`<text x="${cx}" y="${T+ih-6}" text-anchor="middle" font-size="9.5" fill="var(--go-ink)" font-weight="600">rest</text>`;
+    if(x.future)s+=`<line x1="${bx}" x2="${bx+bw}" y1="${T+ih-.5}" y2="${T+ih-.5}" stroke="var(--line)" stroke-width="2" stroke-dasharray="3 3"/>`;
+    s+=`<text x="${cx}" y="${H-6}" text-anchor="middle" font-size="10" fill="${x.today?'var(--ink)':'var(--muted)'}" font-weight="${x.today?600:400}">${DOW[x.d.getDay()]}</text>`;
+    const tip=`${dayLabel(x.d)}|${x.future?'Not yet':x.tot?hrsWord(x.tot)+' online':'Rest day'}|${x.late?hrsWord(x.late)+' after 10 PM':''}`;
+    s+=`<rect x="${L+band*i}" y="${T}" width="${band}" height="${ih+B}" fill="transparent" data-tip="${tip}" tabindex="0" aria-label="${tip.replace(/\|/g,', ')}"/>`;
+  });
+  s+='</svg>';
+  /* "usual" comes from Alex's own online hours over the last 8 full weeks: no self-declared target needed */
+  const wkHrs=[];for(let k=1;k<=8;k++){const ws=addDays(w,-7*k),we=addDays(ws,7);wkHrs.push(SNAP.recs.filter(r=>r.s>=ws.getTime()&&r.s<we.getTime()).reduce((x,r)=>x+r.dur,0));}
+  const uLo=Math.round(quantile(wkHrs,.25)),uHi=Math.round(quantile(wkHrs,.75));
+  const mW=320,mx2=Math.max(30,Math.ceil(uHi*1.4/5)*5),xs=v=>mW*v/mx2, over=tot>uHi*1.15;
+  const meter=`<svg viewBox="0 0 ${mW} 18" role="img" aria-label="${hrsWord(tot)} this week against your usual ${uLo} to ${uHi} hours">
+    <rect x="0" y="5" width="${mW}" height="8" rx="4" fill="var(--grid)"/>
+    <rect x="${xs(uLo)}" y="3" width="${Math.max(2,xs(uHi)-xs(uLo))}" height="12" rx="3" fill="var(--go-soft)" stroke="var(--go)" stroke-width="1"/>
+    <rect x="0" y="5" width="${Math.max(6,xs(Math.min(tot,mx2)))}" height="8" rx="4" fill="${over?'var(--warn)':'var(--accent)'}"/></svg>`;
+  $('week').innerHTML=`
+    <div class="legend"><span><i style="background:var(--accent)"></i>Before 10 PM</span><span><i style="background:var(--late)"></i>After 10 PM</span></div>
+    ${s}
+    <div class="meter-row"><span>This week</span><span><b>${hrsWord(tot)}</b> · your usual is ${uLo}–${uHi} hrs</span></div>
+    ${meter}
+    <div style="font-size:11.5px;color:var(--muted)">Usual = the middle half of your last 8 weeks.${over?' You are well past it this week.':''}</div>
+    <div class="facts">
+      <div class="fact"><div class="k">Days in a row</div><div class="v">${wb.cons}</div></div>
+      <div class="fact"><div class="k">After 10 PM this week</div><div class="v">${lateTot?fmtH(lateTot):'None'}</div></div>
+    </div>`;
+}
+
+/* ---------- Band 3: surge history (same weekday, city-wide) ---------- */
+function surgeHistory(nd){
+  const days=[];for(let k=1;k<=8;k++)days.push(addDays(sod(nd),-7*k));
+  const hours=[];for(let h=6;h<26;h++)hours.push(h);
+  return ZONES.map(z=>{
+    const cells=hours.map(h=>{let n=0,m=0;days.forEach(d=>{const v=surgeAt(z.id,at(d,h+.5).getTime());if(v>1){n++;m+=v;}});return {h,freq:n/days.length,n,mult:n?m/n:1};});
+    /* longest run of hours that surged on at least half of those days */
+    let best=null,cur=null;
+    cells.forEach(c=>{if(c.freq>=.5){if(!cur)cur={a:c.h,b:c.h+1,cells:[]};cur.b=c.h+1;cur.cells.push(c);if(!best||cur.cells.length>best.cells.length)best=cur;}else cur=null;});
+    const tot=cells.reduce((x,c)=>x+c.freq,0);
+    return {zone:z.id,cells,win:best,tot,
+      winMult:best?best.cells.reduce((x,c)=>x+c.mult,0)/best.cells.length:1,
+      winDays:best?Math.round(best.cells.reduce((x,c)=>x+c.n,0)/best.cells.length):0};
+  });
+}
+const DOW_FULL=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+/* surge schedule for one weekday: every zone's regular surge windows over the last 8 of that weekday */
+function surgeByDay(dow){
+  const today=sod(new Date(SNAP.now));let d=addDays(today,-((today.getDay()-dow+7)%7||7));
+  const days=[];for(let k=0;k<8;k++)days.push(addDays(d,-7*k));
+  return ZONES.map(z=>{
+    const cells=[];for(let h=6;h<27;h++){let n=0,m=0;days.forEach(dd=>{const v=surgeAt(z.id,at(dd,h+.5).getTime());if(v>1){n++;m+=v;}});cells.push({h,n,mult:n?m/n:1});}
+    const wins=[];let cur=null;
+    cells.forEach(c=>{if(c.n>=4){if(!cur){cur={a:c.h,b:c.h+1,n:0,m:0,k:0};wins.push(cur);}cur.b=c.h+1;cur.n+=c.n;cur.m+=c.mult;cur.k++;}else cur=null;});
+    return {zone:z.id,wins:wins.map(w=>({a:w.a,b:w.b,days:Math.round(w.n/w.k),mult:w.m/w.k}))};
+  });
+}
+function renderSurge(){
+  if(UI.surgeDay==null)UI.surgeDay=new Date(SNAP.now).getDay();
+  const order=[1,2,3,4,5,6,0], todayDow=new Date(SNAP.now).getDay();
+  $('surge-note').textContent='Last 8 weeks, city-wide';
+  const days=`<div class="daytabs" role="group" aria-label="Day of week">${order.map(d=>`<button type="button" data-sday="${d}" aria-pressed="${UI.surgeDay===d}">${DOW[d]}${d===todayDow?'<i></i>':''}</button>`).join('')}</div>`;
+  const rows=surgeByDay(UI.surgeDay);
+  const withS=rows.filter(r=>r.wins.length).sort((x,y)=>y.wins.reduce((t,w)=>t+w.days*(w.b-w.a),0)-x.wins.reduce((t,w)=>t+w.days*(w.b-w.a),0));
+  const none=rows.filter(r=>!r.wins.length).map(r=>Z[r.zone].name);
+  const list=withS.map(r=>`<div class="srow"><div class="top"><b>${Z[r.zone].name}${r.zone===DEC.op.cur?' <span class="here-tag">You\'re here</span>':''}</b></div>
+      <div class="wins">${r.wins.map(w=>`<span class="win"><b>${fmtHour(w.a)}–${fmtHour(w.b)}</b> ${w.mult.toFixed(1)}× · ${w.days} of 8 weeks</span>`).join('')}</div></div>`).join('');
+  $('surge').innerHTML=`${days}
+    <div class="sub-note"><b style="color:var(--ink)">${DOW_FULL[UI.surgeDay]}s</b>: areas with surge pricing on at least half of the last 8 ${DOW_FULL[UI.surgeDay]}s.</div>
+    ${list||'<div class="sub-note">No area had regular surge pricing on this day.</div>'}
+    ${none.length&&withS.length?`<div class="sub-note">No regular surge: ${none.join(', ')}</div>`:''}
+    <div class="sub-note">1.5× means fares were one and a half times the normal price during that window.</div>`;
+}
+
+/* ---------- Band 3: trip offers (cancellations and rating → offer flow) ---------- */
+function spark(label,val,series,lo,hi,thr,bad,fmt,thrLbl){
+  const W=320,H=40,x=i=>6+(W-12)*i/(series.length-1),y=v=>12+(H-15)*(1-clamp((v-lo)/(hi-lo),0,1));
+  const pts=series.map((v,i)=>v==null?null:[x(i),y(v)]).filter(Boolean);
+  const last=series[series.length-1], isBad=last!=null&&bad(last);
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${label}: now ${fmt(val)}; ${thrLbl}">`;
+  s+=`<line x1="0" x2="${W}" y1="${y(thr)}" y2="${y(thr)}" stroke="var(--muted)" stroke-width="1" stroke-dasharray="3 3"/>`;
+  s+=`<text x="2" y="${y(thr)-3}" font-size="9" fill="var(--muted)">${thrLbl}</text>`;
+  s+=`<polyline points="${pts.map(p=>p.join(',')).join(' ')}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+  const lp=pts[pts.length-1];if(lp)s+=`<circle cx="${lp[0]}" cy="${lp[1]}" r="4" fill="${isBad?'var(--warn)':'var(--accent)'}" stroke="var(--surface-2)" stroke-width="2"/>`;
+  return `<div class="bullet"><div class="bl"><span>${label}</span><span><b style="${isBad?'color:var(--warn-ink)':''}">${fmt(val)}</b></span></div>${s+'</svg>'}</div>`;
+}
+function renderScore(){
+  const a=curMetrics(SNAP);
+  const ok=(good,yes,no)=>good?`<span class="chip go">${yes}</span>`:`<span class="chip warn">${no}</span>`;
+  const r2=Math.round(a.rating*100)/100;
+  const tiles=[
+    {n:pct(a.acc),t:'Acceptance rate',b:ok(a.acc>=ACC_T-.02,'On par','Below typical'),ref:'Typical '+pct(ACC_T)},
+    {n:r2.toFixed(2)+'<small>\u2605</small>',t:'Star rating',b:ok(r2>=4.9,'On track','Below 4.90'),ref:'Offers drop below 4.90'},
+    {n:pct(a.cancelRate),t:'Cancellation rate',b:ok(a.cancelRate<=.04,'On track','Above 4%'),ref:'Offers drop above 4%'},
+    {n:pct(a.offIdx),t:'Offers vs typical',b:ok(a.offIdx>=.92,'In line','Fewer offers'),ref:'Same zones and hours'}
+  ];
+  $('score-grid').innerHTML=tiles.map(x=>`<div class="score"><div class="n">${x.n}</div><div class="t">${x.t}</div>${x.b}<div class="ref">${x.ref}</div></div>`).join('');
+}
+function renderOffers(){
+  const nd=new Date(SNAP.now), wk=monday(nd), ends=[];
+  for(let k=11;k>=0;k--)ends.push(k===0?SNAP.now:addDays(wk,-7*(k-1)).getTime());
+  const roll=ends.map(e=>agg(SNAP.recs.filter(r=>r.s>=e-28*DAY&&r.s<e)));
+  const now=roll[roll.length-1], then=roll[0];
+  const chip=now.offIdx<.92?`<span class="chip warn">${pct(1-now.offIdx)} fewer than typical</span>`:now.offIdx<.98?`<span class="chip neutral">Slightly below typical</span>`:`<span class="chip go">In line with typical</span>`;
+  const lostPerWk=Math.max(0,(now.offT-now.offers)/4)*(now.offers?now.earn/now.offers:0);
+  let expl;
+  if(now.offIdx<.92){
+    const reasons=[];
+    if(now.cancelRate>.04)reasons.push(`your cancellation rate went from ${pct(then.cancelRate)} to ${pct(now.cancelRate)}`);
+    if(now.rating<4.9)reasons.push(`your rating slid from ${then.rating.toFixed(2)} to ${now.rating.toFixed(2)}`);
+    expl=`You are getting fewer trip offers than drivers in the same zones and hours`+(reasons.length?` since ${reasons.join(' and ')}.`:'.')+` That is roughly <b>${money(lostPerWk,0)} a week</b> in trips you were never offered. Cancelling fewer accepted trips is the fastest lever.`;
+  }else expl=`You get about as many offers as other drivers in the same zones and hours. Keep cancellations under 4% and your rating above 4.90 to keep it that way.`;
+  $('offers').innerHTML=`
+    <div class="offer-head"><span class="big">${now.offph.toFixed(1)} offers/hr</span>${chip}</div>
+    <p class="expl">${expl}</p>
+    <div class="bullets">
+      ${spark('Offers vs typical, same zones and hours',now.offIdx,roll.map(a=>a.online?a.offIdx:null),.7,1.15,1,v=>v<.92,v=>pct(v),'typical')}
+      ${spark('Cancellation rate (trips you accepted, then cancelled)',now.cancelRate,roll.map(a=>a.accepted?a.cancelRate:null),0,.12,.04,v=>v>.04,v=>pct(v),'4%')}
+      ${spark('Rating',now.rating,roll.map(a=>a.rc?a.rating:null),4.72,5,4.9,v=>v<4.9,v=>v.toFixed(2),'4.90')}
+    </div>`;
+}
+
+/* ---------- Band 3d: compare ---------- */
+function strip(label,you,arr,fmt,note){
+  const W=320,H=40,lo=Math.min(...arr,you)*.95,hi=Math.max(...arr,you)*1.03,x=v=>8+(W-16)*(v-lo)/(hi-lo);
+  const r=mulberry32(9);const med=median(arr),p=pctBelow(you,arr);
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${label}: you ${fmt(you)}, ahead of ${p}% of similar drivers; median ${fmt(med)}">`;
+  s+=`<line x1="8" x2="${W-8}" y1="20" y2="20" stroke="var(--grid)"/>`;
+  arr.forEach(v=>{s+=`<circle cx="${x(v)}" cy="${13+r()*14}" r="3" fill="var(--peer)"/>`;});
+  s+=`<line x1="${x(med)}" x2="${x(med)}" y1="4" y2="36" stroke="var(--ink-2)" stroke-width="1.5"/>`;
+  s+=`<circle cx="${x(you)}" cy="20" r="6.5" fill="var(--accent)" stroke="var(--surface-2)" stroke-width="2.5"/></svg>`;
+  return `<div class="bullet"><div class="bl"><span>${label}</span><span><b>${fmt(you)}</b> · ahead of ${p}%</span></div>${s}<div style="font-size:11.5px;color:var(--muted);margin-top:2px">${note.replace('{med}',fmt(med))}</div></div>`;
+}
+function renderCompare(){
+  const a=agg(SNAP.recs.filter(r=>r.s>=SNAP.now-28*DAY)), PEER=peerDist(SNAP.now-28*DAY,SNAP.now);
+  $('compare').innerHTML=`
+    <div class="legend"><span><i style="background:var(--accent);border-radius:50%"></i>You</span><span><i style="background:var(--peer);border-radius:50%"></i>80 similar part-time drivers</span><span><i style="background:var(--ink-2);width:2px;border-radius:0"></i>Median</span></div>
+    ${strip('Earnings per online hour',a.epoh,PEER.epoh,v=>money(v),'Median {med}. The number everything else explains.')}
+    ${strip('On a trip, share of time',a.util,PEER.util,pct,'Median {med}. Low here means waiting, often from where and when you start.')}
+    ${strip('Trip offers per online hour',a.offph,PEER.offph,v=>v.toFixed(1),'Median {med}. Fewer offers usually traces back to cancellations or a sliding rating.')}
+    ${strip('Pay per trip hour',a.rate,PEER.rate,v=>money(v,0),'Median {med}. Low here means shorter fares or missed surges.')}`;
+}
+
+/* ---------- Band 3e: heatmap ---------- */
+function renderHeat(){
+  const dow=UI.heat==='wk'?2:6, blocks=[];for(let h=6;h<26;h+=2)blocks.push(h);
+  const W=364,L=76,T=4,cw=(W-L-2)/blocks.length,ch=24,H=T+ZONES.length*ch+20;
+  const lo=12,hi=42,step=v=>Math.round(clamp((v-lo)/(hi-lo),0,1)*6);
+  const mine={};SNAP.recs.filter(r=>r.s>=SNAP.now-56*DAY).forEach(r=>{const s=new Date(r.s);const wk=s.getDay()===0||s.getDay()===6;if((UI.heat==='wk')===wk)return;let h=s.getHours();if(h<6)h+=24;const b=6+Math.floor((h-6)/2)*2;const k=r.zone+'|'+b;mine[k]=(mine[k]||0)+r.dur;});
+  const top=Object.entries(mine).sort((a,b)=>b[1]-a[1]).slice(0,4).map(e=>e[0]);
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Typical earnings per online hour by zone and two-hour block, ${UI.heat==='wk'?'weekdays':'weekends'}">`;
+  ZONES.forEach((z,ri)=>{
+    const y=T+ri*ch;
+    s+=`<text x="${L-8}" y="${y+ch/2+3.5}" text-anchor="end" font-size="11" fill="var(--ink-2)">${z.name}</text>`;
+    blocks.forEach((b,ci)=>{
+      const e=expected(z.id,dow,b+1), x=L+ci*cw, k=z.id+'|'+b;
+      s+=`<rect x="${x+1}" y="${y+1}" width="${cw-2}" height="${ch-2}" rx="3" fill="var(--seq-${step(e.epoh)})"/>`;
+      if(top.includes(k))s+=`<circle cx="${x+cw/2}" cy="${y+ch/2}" r="3.5" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.5"/>`;
+      const tip=`${z.name}, ${fmtHour(b)}–${fmtHour(b+2)}|${money(e.epoh)}/hr typical|On a trip ${pct(e.util)} of the time${top.includes(k)?' · you often drive here':''}`;
+      s+=`<rect x="${x}" y="${y}" width="${cw}" height="${ch}" fill="transparent" data-tip="${tip}" tabindex="0" aria-label="${tip.replace(/\|/g,', ')}"/>`;
+    });
+  });
+  [6,12,18,24].forEach(h=>{const ci=(h-6)/2;s+=`<text x="${L+ci*cw}" y="${H-4}" font-size="10" fill="var(--muted)">${fmtHour(h)}</text>`;});
+  s+='</svg>';
+  let grad='';for(let i=0;i<7;i++)grad+=`<rect x="${i*20}" y="0" width="20" height="8" fill="var(--seq-${i})"/>`;
+  $('heat').innerHTML=`
+    <div class="seg" role="group" aria-label="Day type"><button type="button" data-h="wk" aria-pressed="${UI.heat==='wk'}">Weekdays</button><button type="button" data-h="we" aria-pressed="${UI.heat==='we'}">Weekends</button></div>
+    ${s}
+    <div class="legend" style="align-items:center"><span><svg width="140" height="8" style="display:block" aria-hidden="true">${grad}</svg></span><span>${money(lo,0)} → ${money(hi,0)}+ /hr</span><span><svg width="10" height="10" aria-hidden="true"><circle cx="5" cy="5" r="3.5" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.5"/></svg>Where you usually drive</span></div>`;
+}
+
+/* ---------- tooltip ---------- */
+const app=$('app'), tip=$('tip');
+function showTip(t){
+  const parts=t.getAttribute('data-tip').split('|').filter(Boolean);
+  tip.innerHTML=`<b>${parts[0]}</b>${parts.slice(1).join('<br>')}`;
+  tip.hidden=false;
+  const ar=app.getBoundingClientRect(),tr=t.getBoundingClientRect();
+  let left=tr.left-ar.left+tr.width/2-tip.offsetWidth/2;
+  left=clamp(left,8,app.clientWidth-tip.offsetWidth-8);
+  let top=tr.top-ar.top-tip.offsetHeight-6;
+  if(top<0)top=tr.bottom-ar.top+6;
+  tip.style.left=left+'px';tip.style.top=top+'px';
+}
+app.addEventListener('pointerover',e=>{const t=e.target.closest('[data-tip]');if(t)showTip(t);});
+app.addEventListener('pointerout',e=>{if(e.target.closest('[data-tip]'))tip.hidden=true;});
+app.addEventListener('focusin',e=>{const t=e.target.closest('[data-tip]');if(t)showTip(t);});
+app.addEventListener('focusout',()=>{tip.hidden=true;});
+
+/* ---------- wiring ---------- */
+const NAV=[['home','Home','<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3.2 3 10.6V21h6.2v-6h5.6v6H21V10.6z"/></svg>'],
+  ['earn','Earnings','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.6" fill="currentColor" stroke="none"/></svg>'],
+  ['opps','Opportunities','<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2 6.3 20.3l1.2-6.4L2.8 9.5l6.4-.8z"/></svg>'],
+  ['menu','Menu','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>']];
+function renderTabs(){
+  const cool=DEC.state==='cool';
+  if(cool&&UI.tab==='opps')UI.tab='home';
+  document.querySelectorAll('.tabpanel').forEach(el=>{el.hidden=el.dataset.tab!==UI.tab;});
+  $('bnav').innerHTML=NAV.map(([k,l,ic])=>{const off=cool&&k==='opps';return `<button class="bn" type="button" data-tab="${k}" ${UI.tab===k?'aria-current="page"':''} ${off?'disabled aria-disabled="true" title="Locked during cool-down"':''}>${ic}<span>${l}</span></button>`;}).join('');
+}
+/* Surging now: live multipliers by area on a schematic map */
+const SNXY={dt:[172,100],mt:[108,150],ap:[285,45],un:[48,178],wf:[255,150],ns:[112,44]};
+function renderSurgeNow(){
+  const cur=DEC.op.cur, boost=SNAP.m.boost||{};
+  const st=ZONES.map(z=>({z:z.id,m:Math.max(surgeAt(z.id,SNAP.now),(boost[z.id]&&boost[z.id].m)||1)}));
+  const hot=st.filter(x=>x.m>=1.05).sort((x,y)=>y.m-x.m);
+  $('sn-sub').textContent=!hot.length?'No areas are surging right now.':hot.length===1?`${Z[hot[0].z].name} is surging now.`:`${Z[hot[0].z].name} and ${hot.length-1} other area${hot.length>2?'s':''} ${hot.length>2?'are':'is'} surging now.`;
+  const col=m=>m>=1.5?'#D92D3A':m>=1.25?'#8E2A7E':'#D98E00';
+  let g='<defs>'+['#D92D3A','#8E2A7E','#D98E00'].map((c,i)=>`<radialGradient id="sg${i}"><stop offset="0" stop-color="${c}" stop-opacity=".55"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></radialGradient>`).join('')+'</defs>';
+  g+='<rect width="340" height="210" fill="var(--surface-2)"/><path d="M250 0H340V70Q300 60 270 90Q250 50 250 0Z" fill="var(--accent-soft)"/>';
+  g+='<g stroke="var(--line)" stroke-width="5" stroke-linecap="round" fill="none"><path d="M10 120 Q120 90 330 130"/><path d="M110 8 Q140 100 100 205"/><path d="M60 170 Q160 150 280 40"/><path d="M200 205 Q230 120 300 90"/></g>';
+  hot.forEach(x=>{const [px,py]=SNXY[x.z];g+=`<circle cx="${px}" cy="${py}" r="${46+18*(x.m-1)}" fill="url(#sg${x.m>=1.5?0:x.m>=1.25?1:2})"/>`;});
+  ZONES.forEach(z=>{const [px,py]=SNXY[z.id],h=hot.find(x=>x.z===z.id);
+    g+=`<circle cx="${px}" cy="${py}" r="4" fill="${h?col(h.m):'var(--muted)'}"/><text x="${px}" y="${py+16}" text-anchor="middle" font-size="10.5" fill="var(--ink-2)" font-weight="600">${z.name}</text>`;
+    if(h){const t=`${h.m.toFixed(1)}× +$${(z.fare*(h.m-1)).toFixed(2)}`,w=t.length*6.1+16;g+=`<rect x="${px-w/2}" y="${py-30}" width="${w}" height="20" rx="10" fill="${col(h.m)}"/><text x="${px}" y="${py-16}" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">${t}</text>`;}
+  });
+  const [cx,cy]=SNXY[cur];g+=`<circle cx="${cx}" cy="${cy}" r="11" fill="#fff" stroke="#131A22" stroke-width="2.5"/><path d="M${cx} ${cy-6}L${cx+4.5} ${cy+5}L${cx} ${cy+2.5}L${cx-4.5} ${cy+5}Z" fill="#131A22"/>`;
+  const list=hot.map(x=>`<div class="sn-row"><span><b>${Z[x.z].name}</b>${x.z===cur?' <span class="here-tag">You\'re here</span>':''}<br>${x.z===cur?'Your current area':travel(cur,x.z)+' min · '+Math.round(travel(cur,x.z)*.45)+' km away'}</span><span class="m">${x.m.toFixed(1)}×<br><span style="font-weight:500;color:var(--muted)">+${money(Z[x.z].fare*(x.m-1))}/trip</span></span></div>`).join('');
+  $('surgenow').innerHTML=`<svg viewBox="0 0 340 210" role="img" aria-label="Map of areas surging now">${g}</svg>${list?`<div class="sn-list">${list}</div>`:''}`;
+}
+function renderLimits(){
+  const du=DEC.wb.duty, G=goldElig();
+  $('limits').innerHTML=`<dl class="kv">
+    <dt>Maximum online time per shift</dt><dd>${RULES.maxShift}h</dd>
+    <dt>Rest required after that</dt><dd>${RULES.restHrs}h offline</dd>
+    <dt>Logged now (since last rest)</dt><dd>${fmtH(Math.min(du.hours,RULES.maxShift))}</dd>
+    <dt>Early flag: long shift</dt><dd>${RULES.longDay}+ hours</dd>
+    <dt>Early flag: late night</dt><dd>after 10 PM, 3+ hours in</dd>
+    <dt>Early flag: last 24 hours</dt><dd>${RULES.last24}+ hours</dd>
+    <dt>Early flag: no rest day</dt><dd>${RULES.noRestDays}+ days in a row</dd></dl>
+    <div class="sub-note">At ${RULES.maxShift} hours the app takes you offline and locks going online until the rest is done.</div>
+    <dl class="kv"><dt>Gold event slots</dt><dd>${G.ok?'Gold driver':'Locked'}</dd>${G.rows.map(x=>`<dt>${x.k} (${x.need})</dt><dd>${x.you}</dd>`).join('')}</dl>`;
+}
+function renderAll(){
+  const m=MOMENTS.find(x=>x.id===UI.moment);
+  SNAP=snapshot(m);DEC=decide(SNAP);
+  const cool=DEC.state==='cool';$('app').classList.toggle('cooldown',cool);if(cool)UI.period='today';else UI.cdStart=null;
+  renderMoments();renderHeader();renderHours();renderNow();renderDemand();renderSurgeNow();renderLimits();renderTrace();renderEarnings();renderOpps();renderSurge();renderDiag();renderOffers();renderScore();renderWeek();renderHeat();renderTabs();
+}
+$('app').addEventListener('click',e=>{const b=e.target.closest('[data-ev]');if(!b||b.disabled)return;const id=b.dataset.ev,act=b.dataset.act;UI.claims[id]=UI.claims[id]===act?undefined:act;renderAll();});
+$('app').addEventListener('click',e=>{const b=e.target.closest('[data-online]');if(!b)return;UI.online[UI.moment]=b.dataset.online==='1';renderNow();});
+$('bnav').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(!b||b.disabled)return;UI.tab=b.dataset.tab;renderTabs();$('phone-scroll').scrollTop=0;});
+$('app').addEventListener('click',e=>{const b=e.target.closest('[data-goto]');if(!b)return;UI.tab=b.dataset.goto;renderTabs();$('phone-scroll').scrollTop=0;});
+$('now-card').addEventListener('click',e=>{const b=e.target.closest('[data-resp]');if(!b)return;UI.resp[UI.moment]=b.dataset.resp||undefined;if(!b.dataset.resp)delete UI.deadline[UI.moment];renderNow();});
+$('moments').addEventListener('click',e=>{const b=e.target.closest('[data-m]');if(!b)return;UI.cdStart=null;UI.moment=b.dataset.m;UI.shift=null;UI.surgeDay=null;if(UI.resp[UI.moment]!=='yes'&&UI.resp[UI.moment]!=='no'){delete UI.resp[UI.moment];delete UI.deadline[UI.moment];}renderAll();$('phone-scroll').scrollTop=0;});
+$('eph').addEventListener('click',e=>{if(e.target.closest('[data-info]')){UI.ephInfo=!UI.ephInfo;renderEarnings();return;}const b=e.target.closest('[data-eph]');if(!b)return;UI.eph=b.dataset.eph;renderEarnings();});
+$('tabs').addEventListener('click',e=>{const b=e.target.closest('[data-p]');if(!b)return;UI.period=b.dataset.p;renderEarnings();});
+$('shift-pick').addEventListener('change',e=>{UI.shift=e.target.value;renderDiag();});
+$('surge').addEventListener('click',e=>{const b=e.target.closest('[data-sday]');if(!b)return;UI.surgeDay=+b.dataset.sday;renderSurge();});
+$('heat').addEventListener('click',e=>{const b=e.target.closest('[data-h]');if(!b)return;UI.heat=b.dataset.h;renderHeat();});
+renderAll();
+})();
+</script>
+</body>
+</html>
