@@ -4,6 +4,9 @@
    demand model, market-level surge, and 80 comparable part-time drivers.
    Pure functions only; the React layer renders what these return.
    ===================================================================== */
+import * as M from './metrics.js';
+export { THRESHOLDS, RULES, SIGNALS, DAY_PARTS, tierOf, meets, rate, rateView, moveEstimate, safetyCheck } from './metrics.js';
+const {RULES,THRESHOLDS}=M;
 function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
 function gauss(r){let u=0,v=0;while(!u)u=r();while(!v)v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
 export const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
@@ -63,14 +66,14 @@ export function expected(zid,dow,h){
 }
 function standing(dr,t){
   const cancel=dr.cancelAt?dr.cancelAt(t):dr.cancel, rating=dr.ratingAt?dr.ratingAt(t):dr.rating;
-  return {cancel,rating,mult:clamp(1-3*Math.max(0,cancel-.04)-.9*Math.max(0,4.9-rating),.6,1.03)};
+  return {cancel,rating,mult:clamp(1-3*Math.max(0,cancel-THRESHOLDS.cancellation.goal)-.9*Math.max(0,THRESHOLDS.rating.goal-rating),.6,1.03)};
 }
 export function expectedAtRec(r){const s=new Date(r.s);return expected(r.zone,s.getDay(),hourOf(s)+r.dur/2);}
 
 function pickWeighted(w,r){const ks=Object.keys(w);let t=ks.reduce((a,k)=>a+w[k],0),x=r()*t;for(const k of ks){x-=w[k];if(x<=0)return k;}return ks[ks.length-1];}
 function chooseZone(dr,r,cur,sd){
   const h=hourOf(sd),dow=sd.getDay();
-  const near=ZONES.filter(z=>travel(cur,z.id)<=20);
+  const near=ZONES.filter(z=>travel(cur,z.id)<=RULES.maxDrive);
   if(r()<dr.smart){let best=cur,bv=-1;near.forEach(z=>{const v=expected(z.id,dow,h+.5+travel(cur,z.id)/60).epoh-travel(cur,z.id)*.15;if(v>bv){bv=v;best=z.id;}});return best;}
   if(r()<.22){const w={};near.forEach(z=>w[z.id]=dr.pref[z.id]||.01);return pickWeighted(w,r);}
   return cur;
@@ -125,16 +128,17 @@ export function agg(recs){
   recs.forEach(x=>{a.online+=x.dur;a.engaged+=x.engaged;a.trips+=x.trips;a.fare+=x.fare;a.tips+=x.tips;a.surge+=x.surge;a.offers+=x.offers;a.accepted+=x.accepted;a.cancels+=x.cancels;a.rc+=x.rc;a.rs+=x.rs;a.offT+=x.offT;a.km+=x.km||0;});
   a.earn=a.fare+a.tips;
   a.base=a.fare-a.surge;
-  a.epoh=a.online?a.earn/a.online:0;
-  a.util=a.online?a.engaged/a.online:0;
-  a.rate=a.engaged?a.earn/a.engaged:0;
-  a.acc=a.offers?a.accepted/a.offers:0;
-  a.offph=a.online?a.offers/a.online:0;
-  a.offIdx=a.offT?a.offers/a.offT:0;
-  a.cancelRate=a.accepted?a.cancels/a.accepted:0;
-  a.rating=a.rc?a.rs/a.rc:0;
-  a.tph=a.online?a.trips/a.online:0;
-  a.kmph=a.online?a.km/a.online:0;
+  const R=M.rate;
+  a.epoh=R(a.earn,a.online);
+  a.util=R(a.engaged,a.online);
+  a.rate=R(a.earn,a.engaged);
+  a.acc=R(a.accepted,a.offers);
+  a.offph=R(a.offers,a.online);
+  a.offIdx=R(a.offers,a.offT);
+  a.cancelRate=R(a.cancels,a.accepted);
+  a.rating=R(a.rs,a.rc);
+  a.tph=R(a.trips,a.online);
+  a.kmph=R(a.km,a.online);
   return a;
 }
 
@@ -143,18 +147,33 @@ const ramp=(t,a,b,v0,v1)=>v0+(v1-v0)*clamp((t-a)/(b-a),0,1);
 const ALEX={acc:.72,smart:.3,hMin:20,hMax:25,pref:{dt:.3,un:.22,ns:.24,mt:.14,wf:.06,ap:.04},
   cancelAt:t=>ramp(t,new Date(2026,7,10).getTime(),new Date(2026,8,20).getTime(),.03,.09),
   ratingAt:t=>ramp(t,new Date(2026,7,3).getTime(),new Date(2026,8,26).getTime(),4.94,4.82)};
-const rA=mulberry32(42);
-const ALEX_SHIFTS=[];
-for(let wk=new Date(2025,8,29);wk<new Date(2026,8,21);wk=addDays(wk,7)) ALEX_SHIFTS.push(...genWeek(ALEX,rA,wk));
-const rF=mulberry32(777);
-[
+/* Alex as a Gold driver: same seeds and the same fixed Sep 21-27 week, but
+   steady behaviour (about 78% acceptance, 2% cancellations, 4.94 rating).
+   Used only by the Gold scenario, labelled as an alternate history. */
+const ALEX_GOLD={...ALEX,acc:.78,cancelAt:()=>.02,ratingAt:()=>4.94};
+const FIXED_WEEK=[
   [new Date(2026,8,21),17,   4,   ['un','un','ns','ns']],
   [new Date(2026,8,22),14.67,5,   ['ns','ns','dt','dt','dt']],
   [new Date(2026,8,24),17.5, 4,   ['dt','dt','mt','mt']],
   [new Date(2026,8,25),18.17,6.33,['wf','wf','wf','dt','dt','dt','dt']],
   [new Date(2026,8,26),9.42, 5,   ['wf','wf','wf','dt','dt']],
   [new Date(2026,8,27),12,   10,  ['wf','wf','wf','mt','mt','dt','dt','wf','wf','wf']]
-].forEach(([d,h,len,plan])=>ALEX_SHIFTS.push(simShift(ALEX,rF,at(d,h).getTime(),len,plan)));
+];
+/* Fixed-plan replacements inside the last 4 weeks, on their own seed so the
+   rest of the history is untouched. Sun Sep 13: Alex moves from Downtown to
+   Waterfront mid-shift, giving enough Waterfront weekend hours (5.5h) for the
+   personal Waterfront vs Downtown comparison. */
+const FIXED_REPLACE=[[new Date(2026,8,13),10.75,4.5,['dt','dt','wf','wf','wf']]];
+function genAlex(profile){
+  const rA=mulberry32(42), out=[];
+  for(let wk=new Date(2025,8,29);wk<new Date(2026,8,21);wk=addDays(wk,7)) out.push(...genWeek(profile,rA,wk));
+  const rW=mulberry32(913);
+  FIXED_REPLACE.forEach(([d,h,len,plan])=>{const st=at(d,h).getTime(),i=out.findIndex(x=>x.s===st);if(i>=0)out[i]=simShift(profile,rW,st,len,plan);});
+  const rF=mulberry32(777);
+  FIXED_WEEK.forEach(([d,h,len,plan])=>out.push(simShift(profile,rF,at(d,h).getTime(),len,plan)));
+  return out;
+}
+const HISTORY={base:genAlex(ALEX),gold:genAlex(ALEX_GOLD)};
 
 /* ---- 80 comparable part-time drivers, same 52 weeks ---- */
 export const PEER_RECS=[];
@@ -180,14 +199,14 @@ export function pctBelow(v,arr){return Math.round(100*arr.filter(x=>x<v).length/
 /* ---- Scenarios (the React build currently uses 'login', the Demand scenario) ---- */
 export const MOMENTS=[
   {id:'login',tag:'Demand',blurb:'Alex opens the app at home in Northside, offline. Demand is running above normal in nearby Downtown and Midtown.',now:new Date(2026,8,23,15,45),boost:{},live:{dt:.24,mt:.15}},
-  {id:'gold',tag:'Gold',blurb:'Alex is a Gold driver and went online 15 minutes ago. A homecoming concert lets out near University tonight.',now:new Date(2026,8,25,18,25),boost:{},live:{},gold:true,metrics:{acc:.78,rating:4.94,cancelRate:.02,offIdx:.99}},
+  {id:'gold',tag:'Gold',history:'gold',blurb:'Alternate history: Alex as a Gold driver who meets the standard. Online in Waterfront for 15 minutes. A homecoming concert lets out at University tonight, 10 PM to 12 AM.',now:new Date(2026,8,25,18,25),boost:{},live:{}},
   {id:'rest',tag:'Rest',blurb:'Alex reached the 10-hour limit and was taken offline for a 7-hour rest. Demand is starting to rise on the left side of the city.',now:new Date(2026,8,27,22,0),boost:{},live:{un:.26,mt:.18}}
 ];
 
 export function snapshot(m){
   const now=m.now.getTime();
   const shifts=[];
-  ALEX_SHIFTS.forEach(s=>{
+  HISTORY[m.history||'base'].forEach(s=>{
     if(s.s>=now)return;
     const recs=[];
     s.recs.forEach(r=>{
@@ -208,7 +227,6 @@ export function snapshot(m){
 /* =====================================================================
    Decision logic
    ===================================================================== */
-export const RULES={longDay:5,lateStart:22,lateEnd:5,lateMinHours:3,last24:9,noRestDays:6,horizon:2,oppRatio:1.15,oppMinGain:8,maxDrive:25,maxShift:10,restHrs:7};
 
 function consecutiveDays(snap){
   const byDay=new Set(snap.recs.map(r=>sod(new Date(r.s)).getTime()));
@@ -245,29 +263,65 @@ export function wellbeing(snap){
   ];
   return {liveH,last24,isLate,cons,checks,duty:du,tripped:checks.some(c=>c.hit)};
 }
-export function opportunities(snap){
-  const nd=new Date(snap.now), dow=nd.getDay(), h=hourOf(nd), boost=snap.m.boost;
+/* expected $/online hr in a zone at a clock hour (hours past 24 roll into the next day) */
+export function rateAtFor(snap){
+  const dow=new Date(snap.now).getDay(), boost=snap.m.boost||{};
+  return (z,hh)=>expected(z,(dow+Math.floor(hh/24))%7,((hh%24)+24)%24).epoh*((boost[z]&&boost[z].m)||1);
+}
+export function currentZone(snap){
   const lastRec=snap.recs.length?snap.recs.reduce((x,y)=>x.s>y.s?x:y):null;
-  const cur=snap.live?snap.live.recs[snap.live.recs.length-1].zone:(lastRec&&snap.now-(lastRec.s+lastRec.dur*HOUR)<2*HOUR?lastRec.zone:'ns');
-  const H=RULES.horizon;
-  const val=(z,hh)=>expected(z,dow,hh).epoh*((boost[z]&&boost[z].m)||1);
-  const earnOver=(z,a,b)=>{if(b<=a)return 0;let s=0;for(let i=0;i<8;i++)s+=val(z,a+(b-a)*(i+.5)/8);return s/8*(b-a);};
-  const here=val(cur,h+.25);
-  const stay=earnOver(cur,h,h+H);
+  return snap.live?snap.live.recs[snap.live.recs.length-1].zone:(lastRec&&snap.now-(lastRec.s+lastRec.dur*HOUR)<2*HOUR?lastRec.zone:'ns');
+}
+export function opportunities(snap){
+  const nd=new Date(snap.now), h=hourOf(nd), boost=snap.m.boost||{};
+  const cur=currentZone(snap), H=RULES.horizon, rateAt=rateAtFor(snap);
+  const here=rateAt(cur,h+.25);
   const list=ZONES.filter(z=>z.id!==cur&&travel(cur,z.id)<=RULES.maxDrive).map(z=>{
-    const mins=travel(cur,z.id), arr=h+mins/60;
-    const move=earnOver(z.id,arr,h+H);
-    return {zone:z.id,move,gain:move-stay,mins,arrive:arr,boost:boost[z.id]||null};
+    const mins=travel(cur,z.id);
+    const est=M.moveEstimate({rateAt,from:cur,to:z.id,startH:h,horizonH:H,driveMins:mins});
+    return {zone:z.id,move:est.move,gain:est.gain,gainPerHr:est.gainPerHr,movePerHr:est.movePerHr,est,mins,arrive:h+mins/60,boost:boost[z.id]||null};
   }).sort((a,b)=>b.move-a.move);
+  const stay=list.length?list[0].est.stay:0;
   const best=list[0];
-  const qualifies=!!best&&best.move>=stay*RULES.oppRatio&&best.gain>=RULES.oppMinGain;
+  const qualifies=!!best&&best.est.qualifies;
   return {cur,here,stay,H,list,best,qualifies};
+}
+/* a Gold slot as a move: drive (unpaid) from the current zone, arriving at the
+   slot start, then earn the slot rate; compared with staying put for the same hours */
+export function goldEstimate(snap,e,cur){
+  const nd=new Date(snap.now), dow=nd.getDay(), mins=travel(cur,e.zone), base=rateAtFor(snap);
+  const w=windowStats(e.zone,dow,e.a,e.b), goldRate=w.epoh*(1+e.prem);
+  const rateAt=(z,hh)=>z===e.zone&&hh>=e.a&&hh<e.b?goldRate:base(z,hh);
+  const startH=Math.max(hourOf(nd),e.a-mins/60);
+  const est=M.moveEstimate({rateAt,from:cur,to:e.zone,startH,horizonH:e.b-startH,driveMins:mins});
+  return {...est,typical:w.epoh,goldRate,mins,km:km(mins)};
 }
 export function decide(snap,claims={}){
   const wb=wellbeing(snap), op=opportunities(snap);
   const gt=goldTop(snap,wb,claims);
   const state=wb.duty.cool?'cool':(!snap.live?'start':(wb.tripped?'warn':(gt?'gold':(op.qualifies?'go':'calm'))));
   return {wb,op,state,gt};
+}
+
+/* A2: driving mode reads the active scenario. One number, one action, one status.
+   Cool-down returns null: no driving mode and no earning prompt. */
+export function drivingView(snap,dec){
+  if(dec.state==='cool')return null;
+  const du=dec.wb.duty, op=dec.op, cur=op.cur;
+  let action;
+  if(dec.state==='gold'){const e=dec.gt,g=goldEstimate(snap,e,cur);action={kind:'gold',title:`Gold slot at ${Z[e.zone].name}`,detail:`${e.name} · ${fmtHour(e.a)}–${fmtHour(e.b)}`,zone:e.zone,mins:g.mins,km:g.km,gainPerHr:g.gainPerHr};}
+  else if(dec.state==='warn')action={kind:'rest',title:'Time to wrap up',detail:'Find a safe place to stop'};
+  else if(op.qualifies){const b=op.best;action={kind:'move',title:`Head to ${Z[b.zone].name}`,zone:b.zone,mins:b.mins,km:km(b.mins),gainPerHr:b.gainPerHr,movePerHr:b.movePerHr};}
+  else action={kind:'stay',title:`Stay in ${Z[cur].name}`,zone:cur,mins:0,km:0};
+  let number;
+  if(snap.live){
+    const a=agg(snap.live.recs);
+    number=a.online>=RULES.minRateHours-1e-9?{value:a.epoh,label:'This shift'}:{value:null,label:`This shift · rate shows after ${Math.round(RULES.minRateHours*60)} min online`};
+  }else{
+    /* offline: no "current average"; the number is the best next move */
+    number=action.kind==='move'?{value:action.movePerHr,label:`Expected in ${Z[action.zone].name}, drive included`}:{value:op.here,label:`Typical in ${Z[cur].name} now`};
+  }
+  return {number,action,status:{hours:du.hours,label:'since last rest'},from:cur};
 }
 
 /* =====================================================================
@@ -317,15 +371,25 @@ export function peakHour(recs){
   return best;
 }
 export function completedShifts(snap){return snap.shifts.filter(s=>!s.live&&s.recs.length).sort((a,b)=>b.s-a.s);}
-export function usualEpoh(snap){return median(completedShifts(snap).filter(s=>s.s>=snap.now-56*DAY).map(s=>agg(s.recs).epoh));}
+/* "Your usual $/hr": one definition, in metrics.usualEpoh (median weekly $/hr in
+   the same day-part over the last 8 weeks). recs = the hours being compared
+   (a shift, or today); refMs = compare only with weeks before this moment. */
+export function weightsFor(recs,refMs){return recs&&recs.length?M.dayPartWeights(recs):{[M.dayPartOf(hourOf(new Date(refMs)))]:1};}
+export function usualFor(snap,recs,refMs){refMs=refMs==null?(recs&&recs.length?recs[0].s:snap.now):refMs;return M.usualEpoh(snap.recs.filter(r=>r.s<refMs),refMs,weightsFor(recs,refMs));}
+const PEER_USUAL={};
+export function peerUsualFor(recs,refMs){
+  const w=weightsFor(recs,refMs),k=refMs+'|'+JSON.stringify(w);if(PEER_USUAL[k]!=null)return PEER_USUAL[k];
+  return PEER_USUAL[k]=median(PEER_RECS.map(rs=>M.usualEpoh(rs.filter(r=>r.s<refMs&&r.s>=refMs-56*DAY),refMs,w)).filter(v=>v>0));
+}
+export function dayPartLabel(recs,refMs){const w=weightsFor(recs,refMs);return Object.keys(w).sort((a,b)=>w[b]-w[a]).map(k=>M.DAY_PARTS.find(p=>p.id===k).label.toLowerCase()).join(' + ');}
 
 /* benchmark line under earnings per online hour */
 export function bench(snap,P,a,period){
   if(!a.online)return null;
   if(period==='today'){
-    const usual=usualEpoh(snap), d=a.epoh/usual-1;
-    return {tone:d>=-.05?'go':'neutral',chip:Math.abs(d)<.05?'On par':d>0?'Ahead':'Behind',
-      text:`${Math.abs(d)<.05?'Level with':Math.round(Math.abs(d)*100)+'% '+(d>0?'above':'below')} your usual ${money(usual)}/hr per shift`};
+    const recs=P.buckets.flatMap(b=>b.recs), usual=usualFor(snap,recs), d=a.epoh/usual-1;
+    return {tone:d>=-.05?'go':'neutral',chip:Math.abs(d)<.05?'On par':d>0?'Ahead':'Behind',usual,
+      text:`${Math.abs(d)<.05?'Level with':Math.round(Math.abs(d)*100)+'% '+(d>0?'above':'below')} your usual ${money(usual)}/hr (${dayPartLabel(recs)}, last 8 weeks)`};
   }
   const pd=peerDist(P.start.getTime(),snap.now), p=pctBelow(a.epoh,pd.epoh);
   return {tone:p>=50?'go':'neutral',chip:p>=50?'Above median':'Below median',text:`Beats ${p}% of similar part-time drivers over the same dates`};
@@ -336,20 +400,10 @@ export function maximizeLevers(snap){
   const recs=snap.recs.filter(r=>r.s>=snap.now-28*DAY), a=agg(recs), hrs=a.online;
   if(!hrs)return {empty:true};
   const levers=[];
-  const swaps={};
-  recs.forEach(r=>{
-    const sd=new Date(r.s), h=hourOf(sd)+r.dur/2, dow=sd.getDay(), cur=expected(r.zone,dow,h).epoh;
-    let best=null;ZONES.forEach(z=>{if(z.id===r.zone||travel(r.zone,z.id)>20)return;const v=expected(z.id,dow,h).epoh;if(!best||v>best.v)best={z:z.id,v};});
-    if(best&&best.v>cur*1.1){const wk=dow===0||dow===6?'weekend':'weekday',k=r.zone+'>'+best.z+'>'+wk;const o=swaps[k]||(swaps[k]={from:r.zone,to:best.z,wk,gain:0,dur:0,cur:0,best:0,hs:[]});o.gain+=(best.v-cur)*r.dur;o.dur+=r.dur;o.cur+=cur*r.dur;o.best+=best.v*r.dur;o.hs.push(Math.floor(hourOf(sd)));}
-  });
-  const top=Object.values(swaps).sort((x,y)=>y.gain-x.gain)[0];
-  if(top){
-    const hs=top.hs.sort((x,y)=>x-y), lo=hs[Math.floor(hs.length*.2)], hi=hs[Math.floor(hs.length*.8)]+1;
-    levers.push({t:`Drive in ${Z[top.to].name} instead of ${Z[top.from].name}`,g:top.gain/hrs,
-      x:`On ${top.wk}s around ${fmtHour(lo)}–${fmtHour(hi)}, ${Z[top.to].name} (${travel(top.from,top.to)} min away) usually pays ${money(top.best/top.dur,0)}/hr; ${Z[top.from].name} pays ${money(top.cur/top.dur,0)}/hr. You spent ${fmtH(top.dur)} there in the last 4 weeks.`});
-  }
-  if(a.offIdx<.95){
-    const bits=[];if(a.cancelRate>.04)bits.push(`your cancellation rate is ${pct(a.cancelRate)}; keep it under 4%`);if(Math.round(a.rating*100)/100<4.9)bits.push(`your rating is ${a.rating.toFixed(2)}; get it back above 4.90`);
+  const zl=personalZoneLever(recs,hrs);
+  if(zl)levers.push(zl);
+  if(!M.meets('tripOffers',a.offIdx)){
+    const bits=[];if(!M.meets('cancellation',a.cancelRate))bits.push(`your cancellation rate is ${pct(a.cancelRate)}; the goal is ${THRESHOLDS.cancellation.label}`);if(!M.meets('rating',a.rating))bits.push(`your rating is ${a.rating.toFixed(2)}; the goal is ${THRESHOLDS.rating.label}`);
     levers.push({t:'Cancel fewer accepted trips',g:a.epoh*(Math.min(1/a.offIdx,1.25)-1)*.8,
       x:`You get ${pct(1-a.offIdx)} fewer offers than drivers in the same zones and hours. ${bits.length?bits.join(', and ').replace(/^./,c=>c.toUpperCase())+'.':''}`});
   }
@@ -363,12 +417,45 @@ export function maximizeLevers(snap){
   const share=a.fare?a.surge/a.fare:0;
   if(share<eS*.85){
     const main=Object.entries(recs.reduce((m,r)=>(m[r.zone]=(m[r.zone]||0)+r.dur,m),{})).sort((x,y)=>y[1]-x[1])[0][0];
-    const nd=new Date(snap.now), hist=surgeHistory(nd).filter(zh=>zh.win&&zh.win.b<=22&&travel(main,zh.zone)<=20).sort((x,y)=>y.winDays-x.winDays)[0];
+    const nd=new Date(snap.now), hist=surgeHistory(nd).filter(zh=>zh.win&&zh.win.b<=22&&travel(main,zh.zone)<=RULES.maxDrive).sort((x,y)=>y.winDays-x.winDays)[0];
     levers.push({t:'Be in position before surge starts',g:(eS-share)*a.epoh,
       x:`Surge made up ${pct(share)} of your fares; typical for your zones and hours is ${pct(eS)}.`+(hist?` On ${DOW_FULL[nd.getDay()]}s, ${Z[hist.zone].name} surges ${fmtHour(hist.win.a)}–${fmtHour(hist.win.b)} on ${hist.winDays} of the last 8 weeks. Arrive before it starts.`:'')});
   }
   const list=levers.filter(l=>l.g>=.25).sort((x,y)=>y.g-x.g).slice(0,4);
   return {a,list,reach:a.epoh+list.reduce((t,l)=>t+l.g,0)};
+}
+
+/* A5: the zone lever is personal. It compares Alex's own $/hr in two nearby
+   zones over the last 4 weeks, same day type, with at least MIN_ZONE_H hours
+   in each, and counts one unpaid drive per shift block via moveEstimate. */
+export const MIN_ZONE_H=4;
+export function zoneHistory(recs){
+  const out={};
+  recs.forEach(r=>{const d=new Date(r.s).getDay(),wk=d===0||d===6?'weekend':'weekday',k=r.zone+'|'+wk;(out[k]=out[k]||[]).push(r);});
+  return Object.fromEntries(Object.entries(out).map(([k,rs])=>[k,{...agg(rs),blocks:new Set(rs.map(r=>r.shift)).size}]));
+}
+export function personalZoneLever(recs,hrs){
+  const H=zoneHistory(recs);let best=null;
+  ['weekday','weekend'].forEach(wk=>ZONES.forEach(f=>ZONES.forEach(t=>{
+    if(f.id===t.id||travel(f.id,t.id)>RULES.maxDrive)return;
+    const A=H[f.id+'|'+wk],B=H[t.id+'|'+wk];
+    if(!A||!B||A.online<MIN_ZONE_H||B.online<MIN_ZONE_H)return;
+    const blockH=A.online/A.blocks;
+    const est=M.moveEstimate({rateAt:z=>z===t.id?B.epoh:A.epoh,from:f.id,to:t.id,startH:0,horizonH:blockH,driveMins:travel(f.id,t.id)});
+    if(est.gainPerHr<=0)return;
+    const g=est.gainPerHr*A.online/hrs;
+    if(!best||g>best.g)best={g,wk,from:f.id,to:t.id,A,B,est};
+  })));
+  if(!best||best.g<.25)return null;
+  const {A,B,from,to,wk,est}=best, fn=Z[from].name, tn=Z[to].name, why=[];
+  if(B.util-A.util>=.05)why.push(`you were on a trip ${pct(B.util)} of the time in ${tn} vs ${pct(A.util)} in ${fn}, so shorter waits between trips`);
+  if(A.cancelRate-B.cancelRate>=.02)why.push(`you cancelled fewer trips there (${pct(B.cancelRate)} vs ${pct(A.cancelRate)})`);
+  if(B.rate-A.rate>=2)why.push(`each hour on a trip paid more there (${money(B.rate,0)} vs ${money(A.rate,0)})`);
+  return {key:'zone',personal:true,g:best.g,zoneGain:est.gainPerHr,from,to,wk,
+    t:`${wk==='weekend'?'Weekends':'Weekdays'}: drive in ${tn} instead of ${fn}`,
+    sub:`Based on your last 4 weeks: you earn +${money(est.gainPerHr)}/hr in ${tn} vs ${fn}, after the ${travel(from,to)} min drive.`,
+    why:why.length?`Why: ${why.join('; ')}.`:'',
+    x:`Your ${wk}s, last 4 weeks: ${tn} ${money(B.epoh)}/hr over ${fmtH(B.online)}; ${fn} ${money(A.epoh)}/hr over ${fmtH(A.online)}. City-wide averages can differ; this is your own history.`};
 }
 
 /* you vs the top 20% of earners in the same zones, over comparable time */
@@ -409,7 +496,7 @@ export function slowSplit(snap,recs,usual){
   const pa=agg(peer);let pE=0;peer.forEach(q=>pE+=expectedAtRec(q).epoh*q.dur);pE=pa.online?pE/pa.online:0;
   const ok=pa.online>=2, f=ok?pa.epoh/pE:1;
   const startZone=recs[0].zone;let best=null;
-  ZONES.filter(z=>travel(startZone,z.id)<=20).forEach(z=>{let v=0;recs.forEach(r=>{const d=new Date(r.s);v+=expected(z.id,d.getDay(),hourOf(d)+r.dur/2).epoh*r.dur;});v/=hrs;if(!best||v>best.v)best={zone:z.id,v};});
+  ZONES.filter(z=>travel(startZone,z.id)<=RULES.maxDrive).forEach(z=>{let v=0;recs.forEach(r=>{const d=new Date(r.s);v+=expected(z.id,d.getDay(),hourOf(d)+r.dur/2).epoh*r.dur;});v/=hrs;if(!best||v>best.v)best={zone:z.id,v};});
   const lo=hourOf(new Date(recs[0].s)), hi=lo+(recs[recs.length-1].s+recs[recs.length-1].dur*HOUR-recs[0].s)/HOUR;
   const zn=zones.map(z=>Z[z].name).join(' + '), win=`${fmtHour(Math.floor(lo))}–${fmtHour(Math.ceil(hi))}`;
   const detail={
@@ -420,15 +507,12 @@ export function slowSplit(snap,recs,usual){
   return {a,usual,E,f,ok,
     parts:[{k:'zone',t:'Zone & time',v:E-usual,rows:detail.zone},{k:'market',t:'Market today',v:E*(f-1),rows:detail.market},{k:'you',t:'Your driving',v:a.epoh-E*f,rows:detail.you}]};
 }
-export function shiftUsual(snap,sh){
-  const prior=completedShifts(snap).filter(s=>s.s<sh.s&&s.s>=sh.s-56*DAY).map(s=>agg(s.recs).epoh);
-  return prior.length>3?median(prior):median(peerDist(sh.s-28*DAY,sh.s).epoh);
-}
+export function shiftUsual(snap,sh){return usualFor(snap,sh.recs,sh.s);}
 
 /* =====================================================================
    Opportunities tab
    ===================================================================== */
-export const GOLD_STD={rating:4.90,cancel:.04,acc:.70};
+/* Gold standard = the same goals as account standing (metrics.THRESHOLDS) */
 export const EVENTS=[
   {id:'e1',day:0,name:'Evening classes let out',venue:'University Quad',type:'College',zone:'un',a:21,b:23,prem:.15,left:14,of:30},
   {id:'e2',day:1,name:'Harbor Hawks vs Ridgeview',venue:'Downtown Arena',type:'Sports',zone:'dt',a:21.5,b:23.5,prem:.30,left:12,of:40},
@@ -441,15 +525,14 @@ export const EVENTS=[
 ];
 export function curMetrics(snap){
   const a=agg(snap.recs.filter(r=>r.s>=snap.now-28*DAY&&r.s<=snap.now));
-  const o=snap.m.metrics;if(o)Object.assign(a,o);
   return a;
 }
 export function goldElig(snap){
-  const a=curMetrics(snap), r2=Math.round(a.rating*100)/100;
+  const a=curMetrics(snap), T=THRESHOLDS;
   const rows=[
-    {k:'Star rating',need:'at least '+GOLD_STD.rating.toFixed(2),you:r2.toFixed(2),ok:r2>=GOLD_STD.rating},
-    {k:'Cancellation rate',need:'at most '+pct(GOLD_STD.cancel),you:pct(a.cancelRate),ok:a.cancelRate<=GOLD_STD.cancel},
-    {k:'Acceptance rate',need:'at least '+pct(GOLD_STD.acc),you:pct(a.acc),ok:a.acc>=GOLD_STD.acc}
+    {k:'Star rating',key:'rating',need:T.rating.need,you:a.rc?(Math.round(a.rating*100)/100).toFixed(2):'–',ok:M.meets('rating',a.rating)},
+    {k:'Cancellation rate',key:'cancellation',need:T.cancellation.need,you:pct(a.cancelRate),num:a.cancels,den:a.accepted,ok:M.meets('cancellation',a.cancelRate)},
+    {k:'Acceptance rate',key:'acceptance',need:T.acceptance.need,you:pct(a.acc),num:a.accepted,den:a.offers,ok:M.meets('acceptance',a.acc)}
   ];
   return {rows,ok:rows.every(x=>x.ok)};
 }
@@ -484,22 +567,23 @@ export function optionsForDay(snap,dec,dayIdx,claims){
   let rightNow=null;
   if(isToday&&!cool){
     const list=[...op.list].sort((x,y)=>Math.round(y.gain)-Math.round(x.gain)||x.mins-y.mins).slice(0,2).map((o,i)=>{
-      const good=o.gain>=RULES.oppMinGain&&o.move>=op.stay*RULES.oppRatio, dem=wb.tripped&&o.gain>0, g=Math.round(o.gain);
+      const good=o.est.qualifies, dem=wb.tripped&&o.gain>0, g=Math.round(o.gain);
       const reason=g>0?`Picks up around ${fmtHour(o.arrive+.5)}`:g===0?'About the same as staying':'Earns less than staying';
       return {...o,g,good,dem,reason,best:i===0&&g>0&&!dem};
     });
     rightNow={cur,here:op.here,stay:op.stay,H:op.H,list};
   }
-  const nowH=hourOf(nd), near=ZONES.filter(z=>travel(cur,z.id)<=20);
+  const nowH=hourOf(nd), near=ZONES.filter(z=>travel(cur,z.id)<=RULES.maxDrive);
   const items=OPP_WINDOWS.filter(([a,b])=>!isToday||b>nowH).map(([a,b])=>{
-    const st=near.map(z=>({z:z.id,...windowStats(z.id,dow,a,b)})).sort((x,y)=>y.epoh-x.epoh), best=st[0], mine=st.find(x=>x.z===cur);
+    const rateAt=(z,hh)=>expected(z,(dow+Math.floor(hh/24))%7,((hh%24)+24)%24).epoh;
+    const st=near.map(z=>{const est=M.moveEstimate({rateAt,from:cur,to:z.id,startH:a,horizonH:b-a,driveMins:travel(cur,z.id)});return {z:z.id,...windowStats(z.id,dow,a,b),afterDrive:est.movePerHr,mins:travel(cur,z.id)};}).sort((x,y)=>y.afterDrive-x.afterDrive), best=st[0], mine=st.find(x=>x.z===cur);
     return {kind:'window',a,b,best,mine:best.z!==cur?mine:null,now:isToday&&a<=nowH&&nowH<b,
       surge:best.surge>=1.15?best.surge:null,busy:best.d>=.55?'Busy':best.d<.3?'Quiet':'Steady'};
   });
   const G=goldElig(snap);
   EVENTS.filter(e=>e.day===evDay&&(!isToday||e.b>nowH)).forEach(e=>{
-    const w=windowStats(e.zone,dow,e.a,e.b), st=claims[e.id];
-    items.push({kind:'gold',a:e.a,e,typ:w.epoh,gold:w.epoh*(1+e.prem),leftN:e.left-(st==='yes'?1:0),block:evBlock(e,snap,wb,G,isToday),st});
+    const w=windowStats(e.zone,dow,e.a,e.b), st=claims[e.id], ge=goldEstimate({...snap,now:isToday?snap.now:at(day,0).getTime()},e,cur);
+    items.push({kind:'gold',a:e.a,e,typ:w.epoh,gold:w.epoh*(1+e.prem),ge,leftN:e.left-(st==='yes'?1:0),block:evBlock(e,snap,wb,G,isToday),st});
   });
   items.sort((x,y)=>x.a-y.a);
   return {days,today,day,isToday,cur,rightNow,items,G,cool,until:cool?whenLabel(snap,wb.duty.until):null};
@@ -509,8 +593,8 @@ export function optionsForDay(snap,dec,dayIdx,claims){
 export function surgeNow(snap,cur){
   const boost=snap.m.boost||{};
   const st=ZONES.map(z=>({z:z.id,m:Math.max(surgeAt(z.id,snap.now),(boost[z.id]&&boost[z.id].m)||1)}));
-  const hot=st.filter(x=>x.m>=1.05).sort((x,y)=>y.m-x.m);
-  const txt=!hot.length?'No areas are surging right now.':hot.length===1?`${Z[hot[0].z].name} is surging now.`:`${Z[hot[0].z].name} and ${hot.length-1} other area${hot.length>2?'s':''} ${hot.length>2?'are':'is'} surging now.`;
+  const hot=st.filter(x=>M.surgePricingOn(x.m)).sort((x,y)=>y.m-x.m);
+  const txt=!hot.length?'Surge pricing is off everywhere right now (1.0×).':hot.length===1?`Surge pricing is on in ${Z[hot[0].z].name}.`:`Surge pricing is on in ${Z[hot[0].z].name} and ${hot.length-1} other area${hot.length>2?'s':''}.`;
   return {hot,txt};
 }
 
@@ -556,7 +640,7 @@ export function weekData(snap,dec){
   for(let i=0;i<7;i++){
     const d=addDays(w,i),e=addDays(w,i+1);
     let day=0,late=0;
-    snap.recs.filter(r=>r.s>=d.getTime()&&r.s<e.getTime()).forEach(r=>{const h=hourOf(new Date(r.s));(h>=22||h<5)?late+=r.dur:day+=r.dur;});
+    snap.recs.filter(r=>r.s>=d.getTime()&&r.s<e.getTime()).forEach(r=>{const h=hourOf(new Date(r.s));(h>=RULES.lateStart||h<RULES.lateEnd)?late+=r.dur:day+=r.dur;});
     days.push({d,day,late,tot:day+late,future:d>nd,today:sod(nd).getTime()===d.getTime()});
   }
   const tot=days.reduce((a,x)=>a+x.tot,0), lateTot=days.reduce((a,x)=>a+x.late,0);
@@ -571,30 +655,29 @@ export function offersData(snap){
   const now=roll[roll.length-1], then=roll[0];
   const lostPerWk=Math.max(0,(now.offT-now.offers)/4)*(now.offers?now.earn/now.offers:0);
   const reasons=[];
-  if(now.cancelRate>.04)reasons.push(`your cancellation rate went from ${pct(then.cancelRate)} to ${pct(now.cancelRate)}`);
-  if(now.rating<4.9)reasons.push(`your rating slid from ${then.rating.toFixed(2)} to ${now.rating.toFixed(2)}`);
+  if(!M.meets('cancellation',now.cancelRate))reasons.push(`your cancellation rate went from ${pct(then.cancelRate)} to ${pct(now.cancelRate)}`);
+  if(!M.meets('rating',now.rating))reasons.push(`your rating slid from ${then.rating.toFixed(2)} to ${now.rating.toFixed(2)}`);
   return {roll,now,then,lostPerWk,reasons,
-    chip:now.offIdx<.92?{tone:'warn',t:`${pct(1-now.offIdx)} fewer than typical`}:now.offIdx<.98?{tone:'neutral',t:'Slightly below typical'}:{tone:'go',t:'In line with typical'}};
+    chip:!M.meets('tripOffers',now.offIdx)?{tone:'warn',t:`${pct(1-now.offIdx)} fewer than typical`}:now.offIdx<.98?{tone:'neutral',t:'Slightly below typical'}:{tone:'go',t:'In line with typical'}};
 }
 
 /* =====================================================================
    Home tab: live demand (normal demand for the zone and hour, plus the
-   live gap above it). A surge in demand = at least 12 points above normal.
+   live gap above it). "Demand above normal" = at least 12 points above
+   normal for this hour (metrics.SIGNALS). This is not surge pricing.
    ===================================================================== */
 export const STATE_LABEL={go:'Opportunity',warn:'Take a break',calm:'On pace',cool:'Cool-down',start:'Demand building',gold:'Gold offer'};
-export const SURGE_GAP=.12;
 export const dmCol=v=>v>=.70?'#D92D3A':v>=.55?'#8E2A7E':v>=.40?'#D98E00':null;
 export function liveDemand(snap,cur){
   const nd=new Date(snap.now), dow=nd.getDay(), h=hourOf(nd), L=snap.m.live||{};
   return ZONES.map(z=>{
     const d0=demand(z.id,dow,h), gap=L[z.id]||0, lv=clamp(d0+gap,.05,.98), e0=expected(z.id,dow,h).epoh;
-    return {z:z.id,d0,gap,lv,e0,e:e0*(1+(lv/d0-1)*.5),mins:travel(cur,z.id),near:travel(cur,z.id)<=20,surging:gap>=SURGE_GAP};
+    return {z:z.id,d0,gap,lv,e0,e:e0*(1+(lv/d0-1)*.5),mins:travel(cur,z.id),near:travel(cur,z.id)<=RULES.maxDrive,above:M.demandAboveNormal(lv,d0),surge:surgeAt(z.id,snap.now),surgeOn:M.surgePricingOn(surgeAt(z.id,snap.now))};
   });
 }
 export function demandSummary(snap,cur){
-  const live=liveDemand(snap,cur), near=live.filter(x=>x.near&&x.surging).sort((a,b)=>b.gap-a.gap);
-  const soft=near.length&&near[0].gap<.25;
-  const txt=!near.length?'No surge nearby. Demand is normal for this time of day.':(near.length===1?`${Z[near[0].z].name} is`:`${Z[near[0].z].name} and ${near.length-1} other nearby area${near.length>2?'s are':' is'}`)+(soft?' starting to surge in demand.':' surging in demand.');
+  const live=liveDemand(snap,cur), near=live.filter(x=>x.near&&x.above).sort((a,b)=>b.gap-a.gap);
+  const txt=!near.length?'Demand is normal nearby for this time of day.':`Demand is above normal in ${near.map(x=>Z[x.z].name).join(' and ')}.`;
   return {live,near,txt};
 }
 
@@ -608,14 +691,6 @@ export function standingWindow(snap,key){
   const start=key==='day'?snap.now-DAY:key==='week'?snap.now-7*DAY:key==='month'?snap.now-28*DAY:new Date(nd.getFullYear(),Math.floor(nd.getMonth()/3)*3,1).getTime();
   const desc={day:'Last 24 hours',week:'Last 7 days',month:'Last 28 days',quarter:`Since ${MON[Math.floor(nd.getMonth()/3)*3]} 1`}[key];
   const a=agg(snap.recs.filter(r=>r.s>=start&&r.s<snap.now));
-  const o=snap.m.metrics;
-  if(o&&a.offers){                      /* scenario sets the rates; derive counts that match them */
-    a.accepted=Math.round(a.offers*o.acc);a.acc=a.accepted/a.offers;
-    a.cancels=Math.round(a.accepted*o.cancelRate);a.cancelRate=a.accepted?a.cancels/a.accepted:0;
-    a.trips=a.accepted-a.cancels;a.rc=Math.round(a.trips*.7);a.rating=o.rating;
-    a.offers=Math.round(a.offT*o.offIdx);a.offIdx=a.offT?a.offers/a.offT:0;
-    a.accepted=Math.min(a.accepted,a.offers);
-  }
   const peers=PEER_RECS.map(rs=>agg(rs.filter(x=>x.s>=start&&x.s<snap.now))).filter(p=>p.online>0);
   const med=(f,k)=>median(peers.filter(f).map(p=>p[k]));
   return {key,desc,a,empty:!a.online,n:peers.length,

@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client';
 import * as E from './engine.js';
 
 /* Scenarios come from the engine: Demand (Wed 3:45 PM, offline), Gold (Fri 6:25 PM, online), Rest (Sun 10 PM, cool-down). */
-const HOURS = { cap: E.RULES.maxShift, rest: E.RULES.restHrs };
+const R = E.RULES; /* all limits come from metrics.js via the engine */
 
 /* ------------------------------------------------------------------ */
 /* Icons (inline SVG, stroke-based)                                    */
@@ -169,7 +169,7 @@ const NowShell = ({ tone, chip, chipTone, children }) => (
 const CoolCard = ({ snap, dec }) => {
   const [start] = useState(Date.now());
   useTick();
-  const du = dec.wb.duty, REST = E.RULES.restHrs * E.HOUR;
+  const du = dec.wb.duty, REST = R.restHrs * E.HOUR;
   const left = Math.max(0, du.until - (snap.now + (Date.now() - start)));
   return (
     <NowShell tone="cool" chip={<><LockIcon className="h-3 w-3" />Cool-down</>} chipTone="neutral">
@@ -180,7 +180,7 @@ const CoolCard = ({ snap, dec }) => {
       <button type="button" disabled aria-disabled="true" className="flex min-h-[44px] w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl border-[1.5px] border-dashed border-slate-400 text-sm font-semibold text-slate-600">
         <LockIcon className="h-4 w-4" />Go online is locked
       </button>
-      <p className="text-xs text-slate-600">You reached the {E.RULES.maxShift}-hour limit. Rest {E.RULES.restHrs} hours before your next shift.</p>
+      <p className="text-xs text-slate-600">You reached the {R.maxShift}-hour limit. Rest {R.restHrs} hours before your next shift.</p>
     </NowShell>
   );
 };
@@ -218,7 +218,7 @@ const GoOffer = ({ snap, dec, ui, setUi }) => {
         <div className="rounded-xl bg-white px-3 py-2"><p className="text-[11px] text-slate-500">Stay in {here}</p><p className="text-lg font-bold tabular-nums">{E.money(op.stay, 0)}</p></div>
         <div className="rounded-xl border-[1.5px] border-emerald-500 bg-white px-3 py-2"><p className="text-[11px] text-slate-500">Go to {zn}</p><p className="text-lg font-bold tabular-nums text-emerald-700">{E.money(b.move, 0)}</p></div>
       </div>
-      <div className="flex justify-between text-[11px] text-slate-500"><span>Expected earnings, next {op.H} hrs</span><b className="text-sm text-emerald-700">+{E.money(b.gain, 0)}</b></div>
+      <div className="flex justify-between text-[11px] text-slate-500"><span>Expected earnings, next {op.H} hrs, drive unpaid</span><b className="text-sm text-emerald-700">+{E.money(b.gainPerHr)}/hr after the drive</b></div>
       <div className="grid grid-cols-2 gap-2">
         <button type="button" onClick={() => setResp('no')} className="min-h-[40px] rounded-xl border-[1.5px] border-emerald-500 bg-white text-sm font-semibold">Decline</button>
         <button type="button" onClick={() => setResp('yes')} className="min-h-[40px] rounded-xl bg-emerald-600 text-sm font-semibold text-white">Accept</button>
@@ -246,27 +246,27 @@ const NowCard = ({ snap, dec, claims, onClaim, ui, setUi }) => {
     );
   }
   if (state === 'gold') {
-    const e = dec.gt, w = E.windowStats(e.zone, new Date(snap.now).getDay(), e.a, e.b), gold = w.epoh * (1 + e.prem), st = claims[e.id], mins = E.travel(op.cur, e.zone);
+    const e = dec.gt, g = E.goldEstimate(snap, e, op.cur), st = claims[e.id], mins = g.mins;
     return (
       <NowShell tone="gold" chip={<><StarIcon className="h-2.5 w-2.5" />Gold offer</>} chipTone="gold">
         <p className="flex items-center gap-2 text-xl font-bold"><StarIcon className="h-5 w-5 text-amber-500" />{e.name}</p>
         <p className="text-sm font-medium text-amber-800">{e.venue} · {E.fmtHour(e.a)} – {E.fmtHour(e.b)} pickups</p>
         <div className="grid grid-cols-2 gap-2">
-          <div className="rounded-xl bg-white px-3 py-2"><p className="text-[11px] text-slate-500">Typical in {E.Z[e.zone].name}</p><p className="text-xl font-bold tabular-nums">{E.money(w.epoh, 0)}<span className="text-xs text-slate-500">/hr</span></p></div>
-          <div className="rounded-xl border-[1.5px] border-amber-500 bg-white px-3 py-2"><p className="text-[11px] text-slate-500">Gold slot</p><p className="text-xl font-bold tabular-nums text-amber-800">{E.money(gold, 0)}<span className="text-xs">/hr</span></p></div>
+          <div className="rounded-xl bg-white px-3 py-2"><p className="text-[11px] text-slate-500">Typical in {E.Z[e.zone].name}</p><p className="text-xl font-bold tabular-nums">{E.money(g.typical, 0)}<span className="text-xs text-slate-500">/hr</span></p></div>
+          <div className="rounded-xl border-[1.5px] border-amber-500 bg-white px-3 py-2"><p className="text-[11px] text-slate-500">Gold slot</p><p className="text-xl font-bold tabular-nums text-amber-800">{E.money(g.goldRate, 0)}<span className="text-xs">/hr</span></p></div>
         </div>
         <div className="flex items-center justify-between gap-2 text-[11px] text-slate-500">
           <span>{Math.round(e.prem * 100)}% premium on fares · {e.left - (st === 'yes' ? 1 : 0)} of {e.of} slots left</span>
           <EventButtons id={e.id} st={st} block="" onClaim={onClaim} />
         </div>
-        <p className="text-xs text-slate-600">{mins} min · {E.km(mins)} km from {E.Z[op.cur].name}. Fits within your {E.RULES.maxShift}-hour limit.</p>
+        <p className="text-xs text-slate-600">{mins} min · {g.km} km from {E.Z[op.cur].name} · +{E.money(g.gainPerHr)}/hr vs staying, after the drive.</p>
       </NowShell>
     );
   }
   if (state === 'go') return <GoOffer snap={snap} dec={dec} ui={ui} setUi={setUi} />;
   const today = E.agg(snap.live ? snap.live.recs : []);
   if (state === 'warn') {
-    const stat = wb.duty.hours >= 8 ? `${E.fmtH(wb.duty.hours)} on · ${E.fmtH(E.RULES.maxShift - wb.duty.hours)} to the ${E.RULES.maxShift}h limit` : `${E.fmtH(wb.liveH)} on · ${E.fmtClock(new Date(snap.now))}`;
+    const stat = wb.duty.hours >= R.nearLimit ? `${E.fmtH(wb.duty.hours)} on · ${E.fmtH(R.maxShift - wb.duty.hours)} to the ${R.maxShift}h limit` : `${E.fmtH(wb.liveH)} on · ${E.fmtClock(new Date(snap.now))}`;
     return (
       <NowShell tone="warn" chip={<><MoonIcon className="h-3 w-3" />Take a break</>} chipTone="warn">
         <p className="flex items-center gap-2 text-xl font-bold"><MoonIcon className="h-6 w-6 text-orange-700" />Time to wrap up</p>
@@ -279,7 +279,7 @@ const NowCard = ({ snap, dec, claims, onClaim, ui, setUi }) => {
     <NowShell tone="calm" chip={<><CheckCircleIcon className="h-3 w-3" />On pace</>} chipTone="neutral">
       <p className="flex items-center gap-2 text-xl font-bold"><CheckCircleIcon className="h-6 w-6 text-slate-600" />You're in a good spot</p>
       <p className="font-mono text-sm font-semibold text-slate-700">About {E.money(op.stay, 0)} expected here over the next {op.H} hrs</p>
-      <p className="text-xs text-slate-600">Once drive time is counted, nothing within {E.RULES.maxDrive} minutes beats {E.Z[op.cur].name} by enough to be worth moving.</p>
+      <p className="text-xs text-slate-600">Once drive time is counted, nothing within {R.maxDrive} minutes beats {E.Z[op.cur].name} by enough to be worth moving.</p>
     </NowShell>
   );
 };
@@ -298,7 +298,7 @@ const DemandMap = ({ cur, live }) => {
       {hot.map((x) => { const [px, py] = CITY_XY[x.z]; return <circle key={x.z} cx={px} cy={py} r={40 + 50 * (x.lv - 0.4)} fill={`url(#dg${gi(E.dmCol(x.lv))})`} />; })}
       {E.ZONES.map((z) => {
         const [px, py] = CITY_XY[z.id], x = hot.find((y) => y.z === z.id);
-        const t = x ? `${x.surging ? '↑ ' : ''}${E.money(x.e, 0)}/hr` : '', w = t.length * 6.3 + 16;
+        const t = x ? `${x.above ? '↑ ' : ''}${E.money(x.e, 0)}/hr` : '', w = t.length * 6.3 + 16;
         return (
           <g key={z.id}>
             <circle cx={px} cy={py} r="4" fill={x ? E.dmCol(x.lv) : '#94a3b8'} />
@@ -321,7 +321,7 @@ const DemandNear = ({ snap, dec }) => {
       <Card className="space-y-2 p-3">
         <div className="overflow-hidden rounded-xl border border-slate-100"><DemandMap cur={cur} live={D.live} /></div>
         <div className="flex items-center gap-2 text-[11px] text-slate-500">
-          <span>Normal</span><i className="block h-1.5 w-14 rounded bg-gradient-to-r from-[#D98E00] via-[#8E2A7E] to-[#D92D3A]" /><span>Surging</span><span className="ml-auto">Live demand by area</span>
+          <span>Demand: normal</span><i className="block h-1.5 w-14 rounded bg-gradient-to-r from-[#D98E00] via-[#8E2A7E] to-[#D92D3A]" /><span>high</span><span className="ml-auto">↑ above normal for this hour</span>
         </div>
         {D.near.slice(0, 3).map((x) => (
           <div key={x.z} className="grid grid-cols-[1fr_auto] gap-x-3 border-t border-slate-100 py-2 text-xs text-slate-500">
@@ -336,18 +336,20 @@ const DemandNear = ({ snap, dec }) => {
 };
 
 const HoursStrip = ({ snap, dec }) => {
-  const du = dec.wb.duty, M = HOURS.cap, h = Math.min(du.hours, M), left = Math.max(0, M - du.hours);
-  const tone = du.capped ? 'max' : du.hours >= 8 ? 'near' : '';
+  const du = dec.wb.duty, M = R.maxShift, h = Math.min(du.hours, M), left = Math.max(0, M - du.hours);
+  const todayH = E.agg(snap.recs.filter((r) => r.s >= E.sod(new Date(snap.now)).getTime())).online;
+  const tone = du.capped ? 'max' : du.hours >= R.nearLimit ? 'near' : '';
   return (
     <Card>
-      <Eyebrow>Hours logged today</Eyebrow>
+      <Eyebrow>Hours since last rest</Eyebrow>
       <p className="mt-2 text-2xl font-bold">{E.fmtH(h)} <span className="text-base font-medium text-slate-500">of {M}h</span></p>
+      {Math.abs(todayH - du.hours) > 0.05 && <p className="text-xs text-slate-600">Online today: {E.fmtH(todayH)}</p>}
       <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-200" role="progressbar" aria-valuenow={h} aria-valuemin={0} aria-valuemax={M}>
         <div className={`h-full rounded-full ${tone === 'max' ? 'bg-red-600' : tone === 'near' ? 'bg-orange-500' : 'bg-blue-600'}`} style={{ width: `${(100 * h) / M}%` }} />
       </div>
       <div className="mt-2 flex justify-between text-xs text-slate-500">
         {du.capped ? (<><span className="font-semibold text-red-700">Limit reached</span><span>Online again {E.whenLabel(snap, du.until)}</span></>)
-          : (<><span className={tone ? 'font-semibold text-orange-700' : ''}>{du.hours ? `${E.fmtH(left)} left` : `Full ${M}h available`}</span><span>{HOURS.rest}h rest after {M}h</span></>)}
+          : (<><span className={tone ? 'font-semibold text-orange-700' : ''}>{du.hours ? `${E.fmtH(left)} left` : `Full ${M}h available`}</span><span>{R.restHrs}h rest after {M}h</span></>)}
       </div>
     </Card>
   );
@@ -360,23 +362,19 @@ const TIER_STYLE = {
   bad: { tile: 'border-rose-200 bg-rose-50', num: 'text-rose-700', chip: 'bg-rose-100 text-rose-800 border-rose-200' },
 };
 const TIER_CHIP = { good: 'On track', mid: 'Almost there', bad: 'Focus' };
-const tier = (v, good, mid, higherIsBetter = true) => (higherIsBetter ? (v >= good ? 'good' : v >= mid ? 'mid' : 'bad') : (v <= good ? 'good' : v <= mid ? 'mid' : 'bad'));
 
 const AccountStandingGrid = ({ snap }) => {
   const [win, setWin] = useState('month');
   const W = useMemo(() => E.standingWindow(snap, win), [snap, win]);
   const a = W.a, p = W.peer;
-  const r2 = Math.round(a.rating * 100) / 100, acc = Math.round(a.acc * 100) / 100, can = Math.round(a.cancelRate * 100) / 100, off = Math.round(a.offIdx * 100) / 100;
-  const fewer = Math.max(1, a.cancels - Math.floor(0.04 * a.accepted));
+  const T = E.THRESHOLDS;
+  const fewer = Math.max(1, a.cancels - Math.floor(T.cancellation.goal * a.accepted));
   const tiles = [
-    { key: 'acc', label: 'Acceptance rate', value: E.pct(a.acc), t: tier(acc, 0.78, 0.7), count: `${a.accepted} of ${a.offers} offers`, goal: '78%+', peer: E.pct(p.acc),
-      tip: 'Accept more offers in quiet hours.' },
-    { key: 'rating', label: 'Rating', value: a.rc ? r2.toFixed(2) : '–', star: true, t: a.rc ? tier(r2, 4.9, 4.85) : null, count: `${a.rc} ratings · ${a.trips} trips`, goal: '4.90+', peer: p.rating.toFixed(2),
-      tip: 'Confirm pickup spots with riders.' },
-    { key: 'cancel', label: 'Cancellation rate', value: E.pct(a.cancelRate), t: tier(can, 0.04, 0.06, false), count: `${a.cancels} of ${a.accepted} trips`, goal: '4% or less', peer: E.pct(p.cancel),
-      tip: `Cancel ${fewer} fewer trip${fewer === 1 ? '' : 's'} to reach 4%.` },
-    { key: 'offers', label: 'Trip offers', value: E.pct(a.offIdx), t: tier(off, 0.92, 0.85), count: `${a.offers} of ${Math.round(a.offT)} typical`, goal: '92%+', peer: E.pct(p.offIdx),
-      tip: 'Fewer cancellations bring more offers.' },
+    { key: 'acc', th: 'acceptance', label: 'Acceptance rate', value: E.pct(a.acc), num: a.accepted, den: a.offers, t: a.offers ? E.tierOf('acceptance', a.acc) : null, count: `${a.accepted} of ${a.offers} offers`, goal: T.acceptance.label, peer: E.pct(p.acc) },
+    { key: 'rating', th: 'rating', label: 'Rating', value: a.rc ? (Math.round(a.rating * 100) / 100).toFixed(2) : '–', star: true, t: a.rc ? E.tierOf('rating', a.rating) : null, count: `${a.rc} ratings · ${a.trips} trips`, goal: T.rating.label, peer: p.rating.toFixed(2) },
+    { key: 'cancel', th: 'cancellation', label: 'Cancellation rate', value: E.pct(a.cancelRate), num: a.cancels, den: a.accepted, t: a.accepted ? E.tierOf('cancellation', a.cancelRate) : null, count: `${a.cancels} of ${a.accepted} accepted trips`, goal: T.cancellation.label, peer: E.pct(p.cancel),
+      tip: `Cancel ${fewer} fewer trip${fewer === 1 ? '' : 's'} to reach ${E.pct(T.cancellation.goal)}.` },
+    { key: 'offers', th: 'tripOffers', label: 'Trip offers', value: E.pct(a.offIdx), num: a.offers, den: a.offT, t: a.offT ? E.tierOf('tripOffers', a.offIdx) : null, count: `${a.offers} of ${Math.round(a.offT)} typical`, goal: T.tripOffers.label, peer: E.pct(p.offIdx) },
   ];
   return (
     <section className="space-y-3">
@@ -390,7 +388,7 @@ const AccountStandingGrid = ({ snap }) => {
             {tiles.map((t) => {
               const st = TIER_STYLE[t.t] || { tile: 'border-slate-200 bg-white', num: 'text-slate-900', chip: '' };
               return (
-                <section key={t.key} className={`flex flex-col rounded-2xl border p-3.5 ${st.tile}`}>
+                <section key={t.key} className={`flex flex-col rounded-2xl border p-3.5 ${st.tile}`} data-metric={t.th} data-num={t.num} data-den={t.den} data-shown={t.value}>
                   <div className="flex items-start justify-between gap-2">
                     <p className={`text-2xl font-bold leading-tight tabular-nums ${st.num}`}>{t.value}{t.star && t.value !== '–' && <span className="text-lg">★</span>}</p>
                     {t.t && <span className={`mt-1 whitespace-nowrap rounded-full border px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide ${st.chip}`}>{TIER_CHIP[t.t]}</span>}
@@ -398,7 +396,7 @@ const AccountStandingGrid = ({ snap }) => {
                   <p className="text-xs font-medium text-slate-800">{t.label}</p>
                   <p className="mt-2 text-[11px] text-slate-600">{t.count}</p>
                   <div className="mt-1.5 space-y-0.5 border-t border-black/5 pt-1.5 text-[11px] text-slate-500">
-                    <p className="flex justify-between gap-2"><span>Goal</span><b className="font-semibold text-slate-700">{t.goal}</b></p>
+                    <p className="flex justify-between gap-2"><span>Goal</span><b className="font-semibold text-slate-700" data-threshold={t.th}>{t.goal}</b></p>
                     <p className="flex justify-between gap-2"><span>Similar drivers</span><b className="font-semibold text-slate-700">{t.peer}</b></p>
                   </div>
                 </section>
@@ -424,45 +422,44 @@ const PitStopView = (props) => (
 /* ------------------------------------------------------------------ */
 /* Traffic mode (isDriving === true): glanceable HUD, no scrolling     */
 /* ------------------------------------------------------------------ */
-const TRAFFIC = { currentRate: 25, hoursLogged: 2.5, action: { zone: 'Downtown', uplift: 6, eta: '20 min', distance: '9 km', targetRate: 31 } };
-
+/* Driving mode reads the active scenario through E.drivingView (A2). */
 const ArrowUpRightIcon = (p) => <Icon {...p}><path d="M7 17 17 7" /><path d="M8 7h9v9" /></Icon>;
 
-const GuardrailBar = () => {
-  const pct = Math.min(100, (TRAFFIC.hoursLogged / HOURS.cap) * 100);
+const GuardrailBar = ({ hours }) => {
+  const pct = Math.min(100, (hours / R.maxShift) * 100);
   return (
     <div className="fixed inset-x-0 top-0 z-50 h-1 bg-slate-200 lg:absolute"
-         role="progressbar" aria-label={`${TRAFFIC.hoursLogged} of ${HOURS.cap} hours`}
-         aria-valuenow={TRAFFIC.hoursLogged} aria-valuemin={0} aria-valuemax={HOURS.cap}>
+         role="progressbar" aria-label={`${E.fmtH(hours)} of ${R.maxShift} hours since last rest`}
+         aria-valuenow={hours} aria-valuemin={0} aria-valuemax={R.maxShift}>
       <div className="h-full bg-slate-900" style={{ width: `${pct}%` }} />
     </div>
   );
 };
 
-const TrafficView = () => (
-  <div className="flex h-full flex-col">
-    <GuardrailBar />
-    <div className="flex flex-1 flex-col items-center justify-center text-center">
-      <p className="text-6xl font-bold tracking-tight tabular-nums">${TRAFFIC.currentRate}/hr</p>
-      <p className="mt-2 text-base font-medium text-slate-500">Current Average</p>
-    </div>
-    <section className="flex h-[33dvh] min-h-[220px] flex-col justify-between rounded-2xl bg-blue-600 p-5 text-white shadow-sm">
-      <div className="flex items-center gap-4">
-        <ArrowUpRightIcon className="h-16 w-16 shrink-0" />
-        <p className="text-2xl font-bold leading-tight">
-          Head {TRAFFIC.action.zone} for +${TRAFFIC.action.uplift}/hr
-        </p>
+const TrafficView = ({ snap, dec }) => {
+  const V = E.drivingView(snap, dec);
+  if (!V) return null;
+  const { number, action, status } = V;
+  return (
+    <div className="flex h-full flex-col" data-screen="driving">
+      <GuardrailBar hours={status.hours} />
+      <div className="flex flex-1 flex-col items-center justify-center text-center">
+        <p className="text-6xl font-bold tracking-tight tabular-nums">{number.value == null ? '–' : `${E.money(number.value, 0)}/hr`}</p>
+        <p className="mt-2 text-base font-medium text-slate-600">{number.label}</p>
+        <p className="mt-4 text-base font-semibold text-slate-700">{E.fmtH(status.hours)} {status.label}</p>
       </div>
-      <p className="text-lg font-medium text-blue-100">
-        {TRAFFIC.action.eta} • {TRAFFIC.action.distance} • ${TRAFFIC.action.targetRate}/hr there
-      </p>
-      <button type="button"
-        className="h-14 w-full rounded-xl bg-white text-lg font-bold text-blue-700 active:scale-[0.98]">
-        Navigate
-      </button>
-    </section>
-  </div>
-);
+      <section className={`flex min-h-[220px] flex-col justify-between gap-3 rounded-2xl p-5 text-white shadow-sm ${action.kind === 'gold' ? 'bg-amber-700' : 'bg-blue-700'}`}>
+        <div className="flex items-center gap-4">
+          <ArrowUpRightIcon className="h-16 w-16 shrink-0" />
+          <p className="text-2xl font-bold leading-tight">{action.title}{action.mins ? ` · ${action.mins} min` : ''}</p>
+        </div>
+        {action.detail && <p className="text-lg font-medium text-white/90">{action.detail}</p>}
+        <p className="text-lg font-medium text-white/90">{action.mins ? `${action.mins} min · ${action.km} km from ${E.Z[V.from].name}` : ''}</p>
+        <button type="button" className="h-14 w-full rounded-xl bg-white text-lg font-bold text-slate-900 active:scale-[0.98]">Navigate</button>
+      </section>
+    </div>
+  );
+};
 
 /* ================================================================== */
 /* EARNINGS TAB                                                        */
@@ -563,7 +560,7 @@ const EphBlock = ({ snap, dec, P, recs, a, period }) => {
   const [sub, setSub] = useState('max');
   const pk = E.peakHour(recs);
   const b = E.bench(snap, P, a, period);
-  const usual = E.usualEpoh(snap);
+  const usual = E.usualFor(snap, recs);
   const showWhy = period === 'today' && snap.live && a.online >= 0.75 && a.epoh < usual * 0.95;
   const cool = dec.state === 'cool';
   return (
@@ -626,23 +623,24 @@ const Maximize = ({ snap }) => {
   return (
     <div className="space-y-2">
       <div className="flex justify-between rounded-xl bg-emerald-50 px-3 py-2.5 text-xs text-emerald-800">
-        <span>Last 4 weeks <b className="text-base">{E.money(M.a.epoh)}/hr</b></span>
+        <span>Last 4 weeks, all hours <b className="text-base">{E.money(M.a.epoh)}/hr</b></span>
         <span>Possible <b className="text-base">{E.money(M.reach)}/hr</b></span>
       </div>
       <div className="divide-y divide-slate-200">
         {M.list.map((l) => (
-          <details key={l.t} className="group">
+          <details key={l.t} className="group" data-lever={l.key || ''} data-from={l.from || ''} data-to={l.to || ''} data-zone-gain={l.zoneGain || ''}>
             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 py-2.5 [&::-webkit-details-marker]:hidden">
-              <span className="text-sm font-semibold">{l.t}</span>
+              <span className="text-sm font-semibold">{l.personal ? l.sub : l.t}{l.personal && <span className="block text-xs font-normal text-slate-600">{l.t}</span>}</span>
               <span className="flex items-center gap-1 whitespace-nowrap text-xs font-semibold tabular-nums text-emerald-700">
                 +{E.money(l.g)}/hr<ChevronIcon className="h-4 w-4 text-slate-400 transition group-open:rotate-180" />
               </span>
             </summary>
+            {l.why && <p className="pb-1 text-xs font-medium leading-relaxed text-slate-700">{l.why}</p>}
             <p className="pb-3 text-xs leading-relaxed text-slate-600">{l.x}</p>
           </details>
         ))}
       </div>
-      <SubNote>Tap a row for details. Gains overlap, so “possible” is an upper estimate.</SubNote>
+      <SubNote>Right column: effect on your overall $/hr. Tap a row for details. Gains overlap, so “possible” is an upper estimate.</SubNote>
     </div>
   );
 };
@@ -695,11 +693,11 @@ const ShiftDiagnosis = ({ snap }) => {
       <div className="flex flex-wrap items-baseline gap-2">
         <span className="text-2xl font-bold tabular-nums">{E.money(D.a.epoh)}/hr</span>
         {Math.abs(diff) < 0.05 ? <Chip>About your usual</Chip>
-          : diff < 0 ? <Chip tone="warn">{Math.round(-diff * 100)}% below your usual {E.money(D.usual, 0)}/hr</Chip>
-          : <Chip tone="go">{Math.round(diff * 100)}% above your usual {E.money(D.usual, 0)}/hr</Chip>}
+          : diff < 0 ? <Chip tone="warn">{Math.round(-diff * 100)}% below your usual {E.money(D.usual)}/hr</Chip>
+          : <Chip tone="go">{Math.round(diff * 100)}% above your usual {E.money(D.usual)}/hr</Chip>}
       </div>
       <SplitRows S={D.S} />
-      <SubNote>Tap a row for the numbers behind it. The three parts add up to the gap against your usual.</SubNote>
+      <SubNote>Your usual = median weekly $/hr for {E.dayPartLabel(sh.recs)} over the 8 weeks before this shift. Tap a row for the numbers behind it. The three parts add up to the gap against your usual.</SubNote>
     </Card>
   );
 };
@@ -765,10 +763,10 @@ const SurgingNow = ({ snap, cur }) => {
   const S = useMemo(() => E.surgeNow(snap, cur), [snap, cur]);
   return (
     <section>
-      <SectionHead title="Surging now" />
+      <SectionHead title="Surge pricing now" note="Fare multiplier above 1.0×" />
       <p className="mb-2 px-1 text-sm text-slate-600">{S.txt}</p>
       <Card className="overflow-hidden p-0">
-        <svg viewBox="0 0 340 210" className="block h-auto w-full" role="img" aria-label="Map of areas surging now">
+        <svg viewBox="0 0 340 210" className="block h-auto w-full" role="img" aria-label="Map of areas with surge pricing on now">
           <defs>
             {['#D92D3A', '#8E2A7E', '#D98E00'].map((c, i) => (
               <radialGradient key={c} id={`sg${i}`}><stop offset="0" stopColor={c} stopOpacity=".55" /><stop offset="1" stopColor={c} stopOpacity="0" /></radialGradient>
@@ -858,7 +856,7 @@ const OptionsNearYou = ({ snap, dec, claims, onClaim }) => {
   const fromCur = (z) => (z === cur ? 'Your current area' : `${E.travel(cur, z)} min · ${E.km(E.travel(cur, z))} km from ${E.Z[cur].name}`);
   return (
     <section>
-      <SectionHead title="Options near you" note="Best area within 20 min · typical $/online hr" />
+      <SectionHead title="Options near you" note={`Best area within ${R.maxDrive} min · $/online hr, drive unpaid`} />
       <Card className="overflow-hidden p-0">
         <div className="grid grid-cols-7 border-b border-slate-100 px-1.5 pt-2" role="group" aria-label="Day">
           {O.days.map((d, i) => {
@@ -908,7 +906,7 @@ const OptionsNearYou = ({ snap, dec, claims, onClaim }) => {
                     {o.dem && o.good && <div className="mt-1"><Chip tone="warn">Late in a long shift</Chip></div>}
                   </div>
                   <p className={`text-right text-sm font-semibold tabular-nums ${o.good && !o.dem ? 'text-emerald-700' : o.dem ? 'text-slate-400' : ''}`}>
-                    {o.g > 0 ? '+' : o.g < 0 ? '−' : '±'}{E.money(Math.abs(o.g), 0)}<span className="block text-[11px] font-medium text-slate-500">{E.money(o.move, 0)} total</span>
+                    {o.gainPerHr > 0.005 ? '+' : o.gainPerHr < -0.005 ? '−' : '±'}{E.money(Math.abs(o.gainPerHr))}/hr<span className="block text-[11px] font-medium text-slate-500">after the drive</span>
                   </p>
                 </div>
               ))}
@@ -923,11 +921,11 @@ const OptionsNearYou = ({ snap, dec, claims, onClaim }) => {
               <div className="min-w-0 flex-1">
                 <p className="font-mono text-xs text-slate-600">{E.fmtHour(it.a)} – {E.fmtHour(it.b)}{it.now ? ' · now' : ''}</p>
                 <p className="text-[15px] font-semibold">{E.Z[it.best.z].name}</p>
-                <p className="text-xs text-slate-600">About {E.money(it.best.epoh, 0)}/hr typical</p>
+                <p className="text-xs text-slate-600">About {E.money(it.best.afterDrive, 0)}/hr{it.best.z !== cur ? `, after the ${it.best.mins} min drive` : ' typical'}</p>
                 <p className="text-xs text-slate-600">{fromCur(it.best.z)}</p>
-                {it.mine && <p className="text-xs text-slate-600">{E.Z[cur].name}: {E.money(it.mine.epoh, 0)}/hr</p>}
+                {it.mine && <p className="text-xs text-slate-600">{E.Z[cur].name}: {E.money(it.mine.afterDrive, 0)}/hr</p>}
                 <div className="mt-1.5 flex flex-wrap gap-1.5">
-                  {it.surge && <Chip tone="warn">Surge up to {it.surge.toFixed(1)}×</Chip>}
+                  {it.surge && <Chip tone="warn">Surge pricing likely, up to {it.surge.toFixed(1)}×</Chip>}
                   <Chip tone={it.busy === 'Busy' ? 'go' : 'neutral'}>{it.busy}</Chip>
                 </div>
               </div>
@@ -942,7 +940,7 @@ const OptionsNearYou = ({ snap, dec, claims, onClaim }) => {
                   <p className="text-[15px] font-semibold">{it.e.name}</p>
                   <p className="text-xs text-slate-600">{it.e.venue} · {E.Z[it.e.zone].name}</p>
                   <p className="text-xs text-slate-600">{fromCur(it.e.zone)}</p>
-                  <p className="mt-1 text-sm font-semibold text-amber-800">+{Math.round(it.e.prem * 100)}% · about {E.money(it.gold, 0)}/hr vs {E.money(it.typ, 0)} typical</p>
+                  <p className="mt-1 text-sm font-semibold text-amber-800">+{Math.round(it.e.prem * 100)}% · about {E.money(it.gold, 0)}/hr vs {E.money(it.typ, 0)} typical · +{E.money(it.ge.gainPerHr)}/hr after the {it.ge.mins} min drive</p>
                 </div>
                 <MiniMap best={it.e.zone} cur={cur} gold />
               </div>
@@ -1055,7 +1053,7 @@ const OpportunitiesView = ({ snap, dec, claims, onClaim }) => (
 /* MENU TAB                                                            */
 /* ================================================================== */
 const ShiftLimits = ({ snap, dec }) => {
-  const du = dec.wb.duty, G = E.goldElig(snap), R = E.RULES;
+  const du = dec.wb.duty, G = E.goldElig(snap);
   return (
     <section>
       <SectionHead title="Shift limits and rest" />
@@ -1065,7 +1063,7 @@ const ShiftLimits = ({ snap, dec }) => {
           ['Rest required after that', `${R.restHrs}h offline`],
           ['Logged now (since last rest)', E.fmtH(Math.min(du.hours, R.maxShift))],
           ['Early flag: long shift', `${R.longDay}+ hours`],
-          ['Early flag: late night', 'after 10 PM, 3+ hours in'],
+          ['Early flag: late night', `after ${E.fmtHour(R.lateStart)}, ${R.lateMinHours}+ hours in`],
           ['Early flag: last 24 hours', `${R.last24}+ hours`],
           ['Early flag: no rest day', `${R.noRestDays}+ days in a row`],
         ]} />
@@ -1153,14 +1151,14 @@ const TripOffers = ({ snap }) => {
       <Card className="space-y-3">
         <div className="flex flex-wrap items-baseline gap-2"><span className="text-2xl font-bold tabular-nums">{n.offph.toFixed(1)} offers/hr</span><Chip tone={O.chip.tone}>{O.chip.t}</Chip></div>
         <p className="text-xs leading-relaxed text-slate-600">
-          {n.offIdx < 0.92 ? (
+          {!E.meets('tripOffers', n.offIdx) ? (
             <>You are getting fewer trip offers than drivers in the same zones and hours{O.reasons.length ? ` since ${O.reasons.join(' and ')}.` : '.'} That is roughly <b className="text-slate-900">{E.money(O.lostPerWk, 0)} a week</b> in trips you were never offered. Cancelling fewer accepted trips is the fastest lever.</>
-          ) : 'You get about as many offers as other drivers in the same zones and hours. Keep cancellations under 4% and your rating above 4.90 to keep it that way.'}
+          ) : `You get about as many offers as other drivers in the same zones and hours. Keep cancellations at ${E.THRESHOLDS.cancellation.label} and your rating at ${E.THRESHOLDS.rating.label} to keep it that way.`}
         </p>
         <div className="space-y-3">
-          <Spark label="Offers vs typical, same zones and hours" val={n.offIdx} series={O.roll.map((a) => (a.online ? a.offIdx : null))} lo={0.7} hi={1.15} thr={1} bad={(v) => v < 0.92} fmt={E.pct} thrLbl="typical" />
-          <Spark label="Cancellation rate (trips you accepted, then cancelled)" val={n.cancelRate} series={O.roll.map((a) => (a.accepted ? a.cancelRate : null))} lo={0} hi={0.12} thr={0.04} bad={(v) => v > 0.04} fmt={E.pct} thrLbl="4%" />
-          <Spark label="Rating" val={n.rating} series={O.roll.map((a) => (a.rc ? a.rating : null))} lo={4.72} hi={5} thr={4.9} bad={(v) => v < 4.9} fmt={(v) => v.toFixed(2)} thrLbl="4.90" />
+          <Spark label="Offers vs typical, same zones and hours" val={n.offIdx} series={O.roll.map((a) => (a.online ? a.offIdx : null))} lo={0.7} hi={1.15} thr={1} bad={(v) => !E.meets('tripOffers', v)} fmt={E.pct} thrLbl="typical" />
+          <Spark label="Cancellation rate (trips you accepted, then cancelled)" val={n.cancelRate} series={O.roll.map((a) => (a.accepted ? a.cancelRate : null))} lo={0} hi={0.12} thr={E.THRESHOLDS.cancellation.goal} bad={(v) => !E.meets('cancellation', v)} fmt={E.pct} thrLbl={E.pct(E.THRESHOLDS.cancellation.goal)} />
+          <Spark label="Rating" val={n.rating} series={O.roll.map((a) => (a.rc ? a.rating : null))} lo={4.72} hi={5} thr={E.THRESHOLDS.rating.goal} bad={(v) => !E.meets('rating', v)} fmt={(v) => v.toFixed(2)} thrLbl={E.THRESHOLDS.rating.goal.toFixed(2)} />
         </div>
       </Card>
     </section>
@@ -1199,7 +1197,7 @@ const TraceStep = ({ title, chip, tone, children }) => (
 );
 
 const Trace = ({ snap, dec }) => {
-  const { wb, op, state } = dec, R = E.RULES;
+  const { wb, op, state } = dec;
   if (state === 'cool') {
     const du = wb.duty;
     return (<>
@@ -1215,11 +1213,11 @@ const Trace = ({ snap, dec }) => {
     const rows = E.liveDemand(snap, op.cur).sort((a, b) => b.gap - a.gap || b.lv - a.lv);
     return (<>
       <TraceStep title="1 · Offline" chip="Not driving" tone="neutral"><TraceRow label="No shift in progress, so the safety and opportunity checks do not apply" /></TraceStep>
-      <TraceStep title="2 · Live demand vs normal" chip="Surge nearby" tone="blue">
-        {rows.map((x) => <TraceRow key={x.z} mark={x.surging ? '●' : '○'} label={`${E.Z[x.z].name}${x.near ? '' : ' (far)'}`} val={`${E.pct(x.d0)} → ${E.pct(x.lv)}`} />)}
-        <TraceRow label={`Normal demand for this hour, then live demand. ● means at least ${Math.round(E.SURGE_GAP * 100)} points above normal.`} />
+      <TraceStep title="2 · Live demand vs normal" chip="Demand above normal" tone="blue">
+        {rows.map((x) => <TraceRow key={x.z} mark={x.above ? '●' : '○'} label={`${E.Z[x.z].name}${x.near ? '' : ' (far)'}${x.surgeOn ? ` · surge pricing ${x.surge.toFixed(1)}×` : ''}`} val={`${E.pct(x.d0)} → ${E.pct(x.lv)}`} />)}
+        <TraceRow label={`Normal demand for this hour, then live demand. ● means at least ${Math.round(E.SIGNALS.demandAboveGap * 100)} points above normal. Surge pricing (a fare multiplier above 1.0×) is a separate signal and is off in every area.`} />
       </TraceStep>
-      <TraceStep title="3 · Shown" chip="Demand building" tone="blue"><TraceRow label="The top card names the nearby areas surging in demand and offers Go online; the map below shows it." /></TraceStep>
+      <TraceStep title="3 · Shown" chip="Demand building" tone="blue"><TraceRow label="The top card names the nearby area with demand above normal and its $/hr after the unpaid drive, and offers Go online." /></TraceStep>
     </>);
   }
   if (state === 'gold') {
@@ -1274,7 +1272,7 @@ const PrototypePanel = ({ momentId, onPick, claims, snap, dec }) => (
       <div className="rounded-xl border border-slate-200 bg-white px-3.5 py-1"><Trace snap={snap} dec={dec} /></div>
     </div>
     <p className="max-w-[60ch] text-xs text-slate-600"><b className="text-slate-900">About the data.</b> Alex is a part-time driver who works 20–25 hours a week around a day job. Everything here comes from a seeded generator: 52 weeks of Alex's shifts across six zones, a zone-by-hour demand model, city-wide surge history, and 80 simulated part-time drivers over the same 52 weeks, so every comparison uses the same dates. No real Uber data is used.</p>
-    <p className="max-w-[60ch] text-xs text-slate-600"><b className="text-slate-900">Modelled assumptions.</b> Trip offers fall when a driver's cancellation rate passes 4% or their rating drops below 4.90. Declining offers lifts the average fare but costs waiting time, more so in quiet hours. Every "move" estimate counts the drive as unpaid time, using fixed drive times between zones.</p>
+    <p className="max-w-[60ch] text-xs text-slate-600"><b className="text-slate-900">Modelled assumptions.</b> Trip offers usually fall when a driver's cancellation rate passes {E.pct(E.THRESHOLDS.cancellation.goal)} or their rating drops below {E.THRESHOLDS.rating.goal.toFixed(2)}. Declining offers lifts the average fare but costs waiting time, more so in quiet hours. Every "move" estimate counts the drive as unpaid time, using fixed drive times between zones.</p>
   </aside>
 );
 
@@ -1346,7 +1344,7 @@ const AppShell = () => {
   };
 
   const renderScreen = () => {
-    if (isDriving) return <TrafficView />;
+    if (isDriving && !cool) return <TrafficView snap={snap} dec={dec} />;
     const k = `${momentId}-${tab}`;
     if (tab === 'earnings') return <EarningsView key={k} snap={snap} dec={dec} />;
     if (tab === 'opportunities') return <OpportunitiesView key={k} snap={snap} dec={dec} claims={claims} onClaim={onClaim} />;
