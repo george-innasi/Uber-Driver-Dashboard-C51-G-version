@@ -75,3 +75,46 @@ test('day-parts', () => {
   assert.equal(M.dayPartOf(2), 'late');
   assert.equal(M.dayPartOf(6), 'morning');
 });
+
+/* ---- safety check: all four early warnings plus the hard limit ---- */
+const base = { shiftH: 1, clockH: 15, last24H: 1, daysInRow: 1 };
+const hit = (S) => S.checks.filter((c) => c.hit).map((c) => c.key).sort();
+test('clear when no warning applies', () => {
+  const S = M.safetyCheck(base);
+  assert.equal(S.status, 'clear');
+  assert.deepEqual(hit(S), []);
+});
+test('long shift: 5+ hours', () => {
+  assert.deepEqual(hit(M.safetyCheck({ ...base, shiftH: 5 })), ['longShift']);
+  assert.deepEqual(hit(M.safetyCheck({ ...base, shiftH: 4.9 })), []);
+});
+test('late night: after 10 PM with 3+ hours in', () => {
+  assert.deepEqual(hit(M.safetyCheck({ ...base, clockH: 22.5, shiftH: 3 })), ['lateNight']);
+  assert.deepEqual(hit(M.safetyCheck({ ...base, clockH: 22.5, shiftH: 2 })), []);
+  assert.deepEqual(hit(M.safetyCheck({ ...base, clockH: 1, shiftH: 3.5 })), ['lateNight']);
+  assert.deepEqual(hit(M.safetyCheck({ ...base, clockH: 21, shiftH: 4 })), []);
+});
+test('9+ hours in the last 24', () => {
+  assert.deepEqual(hit(M.safetyCheck({ ...base, last24H: 9 })), ['last24']);
+});
+test('6+ days in a row', () => {
+  assert.deepEqual(hit(M.safetyCheck({ ...base, daysInRow: 6 })), ['daysInRow']);
+  assert.deepEqual(hit(M.safetyCheck({ ...base, daysInRow: 5 })), []);
+});
+test('the 10h hard limit blocks; the four warnings only caution', () => {
+  assert.equal(M.safetyCheck({ ...base, shiftH: 10 }).status, 'limit');
+  assert.equal(M.safetyCheck({ ...base, shiftH: 6, daysInRow: 7 }).status, 'caution');
+});
+test('Friday Gold slot 10 PM-12 AM, online since 6:10 PM: caution, late night + long shift', () => {
+  const S = M.safetyCheck({ shiftH: 0.25, clockH: 18 + 25 / 60, last24H: 0.25, daysInRow: 1 }, { startH: 22, endH: 24 });
+  assert.equal(S.status, 'caution');
+  assert.deepEqual(hit(S), ['lateNight', 'longShift']);
+  near(S.shiftH, 0.25 + 24 - (18 + 25 / 60));
+});
+test('an evening slot that ends before 10 PM does not trigger late night', () => {
+  const S = M.safetyCheck({ shiftH: 1, clockH: 17, last24H: 1, daysInRow: 1 }, { startH: 19, endH: 21 });
+  assert.equal(hit(S).includes('lateNight'), false);
+});
+test('a slot that would pass 10 hours is a limit', () => {
+  assert.equal(M.safetyCheck({ shiftH: 8, clockH: 20, last24H: 8, daysInRow: 1 }, { startH: 22, endH: 24 }).status, 'limit');
+});

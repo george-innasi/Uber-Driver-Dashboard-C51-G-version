@@ -198,14 +198,14 @@ const GoOffer = ({ snap, dec, ui, setUi }) => {
   if (resp === 'yes') return (
     <NowShell tone="go" chip={<><ArrowUpIcon className="h-3 w-3" />Accepted</>} chipTone="go">
       <p className="flex items-center gap-2 text-xl font-bold"><ArrowUpIcon className="h-6 w-6 text-emerald-700" />On your way to {zn}</p>
-      <p className="text-xs text-slate-600">Arrive around {E.fmtClock(new Date(snap.now + b.mins * 60000))}. Expected {E.money(b.move, 0)} over the next {op.H} hrs.</p>
+      <p className="text-xs text-slate-600">Arrive around {E.fmtClock(new Date(snap.now + b.mins * 60000))}. About {E.money(b.movePerHr, 0)}/hr over the same hours, drive included.</p>
       <Undo />
     </NowShell>
   );
   if (resp === 'no' || resp === 'expired') return (
     <NowShell tone="calm" chip={<><CheckCircleIcon className="h-3 w-3" />{resp === 'no' ? 'Staying put' : 'Offer expired'}</>} chipTone="neutral">
       <p className="flex items-center gap-2 text-xl font-bold"><CheckCircleIcon className="h-6 w-6 text-slate-600" />Staying in {here}</p>
-      <p className="text-xs text-slate-600">{resp === 'expired' ? `The ${zn} suggestion timed out. ` : ''}Expected {E.money(op.stay, 0)}{resp === 'expired' ? ' here' : ''} over the next {op.H} hrs.</p>
+      <p className="text-xs text-slate-600">{resp === 'expired' ? `The ${zn} suggestion timed out. ` : ''}About {E.money(op.stay / op.H, 0)}/hr here over the same hours.</p>
       <Undo label={resp === 'expired' ? 'Show it again' : 'Undo'} />
     </NowShell>
   );
@@ -215,10 +215,10 @@ const GoOffer = ({ snap, dec, ui, setUi }) => {
       <p className="flex items-center gap-2 text-lg font-bold"><ArrowUpIcon className="h-5 w-5 text-emerald-700" />Head to {zn}</p>
       <p className="text-sm font-medium text-emerald-800">{b.mins} min drive</p>
       <div className="grid grid-cols-2 gap-2">
-        <div className="rounded-xl bg-white px-3 py-2"><p className="text-[11px] text-slate-500">Stay in {here}</p><p className="text-lg font-bold tabular-nums">{E.money(op.stay, 0)}</p></div>
-        <div className="rounded-xl border-[1.5px] border-emerald-500 bg-white px-3 py-2"><p className="text-[11px] text-slate-500">Go to {zn}</p><p className="text-lg font-bold tabular-nums text-emerald-700">{E.money(b.move, 0)}</p></div>
+        <div className="rounded-xl bg-white px-3 py-2"><p className="text-[11px] text-slate-500">Stay in {here}</p><p className="text-lg font-bold tabular-nums">{E.money(op.stay / op.H, 0)}/hr</p></div>
+        <div className="rounded-xl border-[1.5px] border-emerald-500 bg-white px-3 py-2"><p className="text-[11px] text-slate-500">Go to {zn}</p><p className="text-lg font-bold tabular-nums text-emerald-700">{E.money(b.movePerHr, 0)}/hr</p></div>
       </div>
-      <div className="flex justify-between text-[11px] text-slate-500"><span>Expected earnings, next {op.H} hrs, drive unpaid</span><b className="text-sm text-emerald-700">+{E.money(b.gainPerHr)}/hr after the drive</b></div>
+      <div className="flex justify-between text-[11px] text-slate-500"><span>Same {op.H} hrs, drive unpaid</span><b className="text-sm text-emerald-700">+{E.money(b.gainPerHr)}/hr after the drive</b></div>
       <div className="grid grid-cols-2 gap-2">
         <button type="button" onClick={() => setResp('no')} className="min-h-[40px] rounded-xl border-[1.5px] border-emerald-500 bg-white text-sm font-semibold">Decline</button>
         <button type="button" onClick={() => setResp('yes')} className="min-h-[40px] rounded-xl bg-emerald-600 text-sm font-semibold text-white">Accept</button>
@@ -229,11 +229,24 @@ const GoOffer = ({ snap, dec, ui, setUi }) => {
   );
 };
 
+/* C2: safety warnings shown on an offer; informs, never blocks (the hard limit blocks elsewhere) */
+const SafetyNote = ({ S }) => (S && S.msgs.length ? (
+  <div className="flex gap-2 rounded-xl border border-orange-300 bg-orange-50 px-3 py-2 text-xs text-orange-900" role="note" data-safety={S.status}>
+    <MoonIcon className="mt-px h-4 w-4 shrink-0" /><span><b>Caution.</b> {S.msgs.join(' ')}</span>
+  </div>
+) : null);
+
 const NowCard = ({ snap, dec, claims, onClaim, ui, setUi }) => {
   const { state, wb, op } = dec;
   if (state === 'cool') return <CoolCard snap={snap} dec={dec} />;
   if (state === 'start') {
     const on = !!ui.online[snap.m.id], D = E.demandSummary(snap, op.cur), t = D.near[0];
+    if (dec.overWeek) return (
+      <NowShell tone="calm" chip={<><CheckCircleIcon className="h-3 w-3" />Usual week reached</>} chipTone="neutral">
+        <p className="text-lg font-bold">You've driven your usual week</p>
+        <p className="text-xs text-slate-600">{E.hrsWord(dec.week.tot)} this week, against your usual {dec.week.uLo}–{dec.week.uHi} hrs. No earning prompts until next week.</p>
+      </NowShell>
+    );
     return (
       <NowShell tone="start" chip={<><TrendIcon className="h-3 w-3" />Demand building</>} chipTone="blue">
         <h2 className="text-lg font-bold leading-snug">Demand is building nearby</h2>
@@ -260,6 +273,7 @@ const NowCard = ({ snap, dec, claims, onClaim, ui, setUi }) => {
           <EventButtons id={e.id} st={st} block="" onClaim={onClaim} />
         </div>
         <p className="text-xs text-slate-600">{mins} min · {g.km} km from {E.Z[op.cur].name} · +{E.money(g.gainPerHr)}/hr vs staying, after the drive.</p>
+        <SafetyNote S={dec.goldSafety} />
       </NowShell>
     );
   }
@@ -278,7 +292,7 @@ const NowCard = ({ snap, dec, claims, onClaim, ui, setUi }) => {
   return (
     <NowShell tone="calm" chip={<><CheckCircleIcon className="h-3 w-3" />On pace</>} chipTone="neutral">
       <p className="flex items-center gap-2 text-xl font-bold"><CheckCircleIcon className="h-6 w-6 text-slate-600" />You're in a good spot</p>
-      <p className="font-mono text-sm font-semibold text-slate-700">About {E.money(op.stay, 0)} expected here over the next {op.H} hrs</p>
+      <p className="font-mono text-sm font-semibold text-slate-700">About {E.money(op.stay / op.H, 0)}/hr expected here</p>
       <p className="text-xs text-slate-600">Once drive time is counted, nothing within {R.maxDrive} minutes beats {E.Z[op.cur].name} by enough to be worth moving.</p>
     </NowShell>
   );
@@ -313,7 +327,7 @@ const DemandMap = ({ cur, live }) => {
 };
 
 const DemandNear = ({ snap, dec }) => {
-  const cur = dec.op.cur, D = E.demandSummary(snap, cur), cool = dec.state === 'cool';
+  const cur = dec.op.cur, D = E.demandSummary(snap, cur);
   return (
     <section>
       <SectionHead title="Demand near you" note="Live" />
@@ -329,7 +343,6 @@ const DemandNear = ({ snap, dec }) => {
             <span className="text-right font-semibold tabular-nums text-slate-900">{E.pct(x.d0)} → {E.pct(x.lv)} demand<br /><span className="font-medium text-slate-500">{E.money(x.e0, 0)} → {E.money(x.e, 0)}/hr</span></span>
           </div>
         ))}
-        {cool && D.near.length > 0 && <SubNote>You're resting until {E.whenLabel(snap, dec.wb.duty.until)}. This is for information only.</SubNote>}
       </Card>
     </section>
   );
@@ -440,12 +453,26 @@ const RateStrip = ({ snap }) => {
   );
 };
 
+/* C1: during cool-down no live demand, surge or earning prompt; one planning card instead */
+const BestAfterRest = ({ snap, dec }) => {
+  const B = E.bestAfterRest(snap, dec);
+  if (!B) return null;
+  return (
+    <Card className="space-y-1.5" data-card="after-rest">
+      <Eyebrow>Best window after your rest</Eyebrow>
+      <p className="text-lg font-bold">{E.Z[B.zone].name} · {E.DOW[B.day.getDay()]} {E.fmtHour(B.a)}–{E.fmtHour(B.b)}</p>
+      <p className="text-sm text-slate-700">Typically about {E.money(B.epoh, 0)}/hr{B.mins ? ` · ${B.mins} min from ${E.Z[dec.op.cur].name}` : ''}</p>
+      <SubNote>Your rest ends {B.restEnds}. Plan the same hours for more, not more hours.</SubNote>
+    </Card>
+  );
+};
+
 const PitStopView = (props) => (
   <div className="space-y-5">
     <DriverGreeting snap={props.snap} dec={props.dec} />
     <RateStrip snap={props.snap} />
     <NowCard {...props} />
-    <DemandNear snap={props.snap} dec={props.dec} />
+    {props.dec.state === 'cool' ? <BestAfterRest snap={props.snap} dec={props.dec} /> : <DemandNear snap={props.snap} dec={props.dec} />}
     <HoursStrip snap={props.snap} dec={props.dec} />
     <AccountStandingGrid snap={props.snap} />
   </div>
@@ -983,6 +1010,7 @@ const OptionsNearYou = ({ snap, dec, claims, onClaim }) => {
                 <span className="text-[11px] text-slate-500">{it.leftN} of {it.e.of} slots left</span>
                 <EventButtons id={it.e.id} st={it.st} block={it.block} onClaim={onClaim} />
               </div>
+              {!it.block && <div className="mt-2"><SafetyNote S={it.safety} /></div>}
             </div>
           ))}
         </div>
@@ -1077,7 +1105,7 @@ const WhereWhenHeat = ({ snap }) => {
 const OpportunitiesView = ({ snap, dec, claims, onClaim }) => (
   <div className="space-y-6">
     <TabTitle>Opportunities</TabTitle>
-    <SurgingNow snap={snap} cur={dec.op.cur} />
+    {dec.state !== 'cool' && <SurgingNow snap={snap} cur={dec.op.cur} />}
     <OptionsNearYou snap={snap} dec={dec} claims={claims} onClaim={onClaim} />
     <SurgeByDay snap={snap} cur={dec.op.cur} />
     <WhereWhenHeat snap={snap} />
@@ -1241,7 +1269,7 @@ const Trace = ({ snap, dec }) => {
         <TraceRow label="Rest required" val={`${R.restHrs}h offline`} />
         <TraceRow label="Can go online again" val={E.whenLabel(snap, du.until)} />
       </TraceStep>
-      <TraceStep title="2 · Shown" chip="Cool-down" tone="neutral"><TraceRow label="The app takes the driver offline and locks going online until the rest is done. Today's opportunities are hidden; the following days are open as usual." /></TraceStep>
+      <TraceStep title="2 · Shown" chip="Cool-down" tone="neutral"><TraceRow label="The app takes the driver offline and locks going online until the rest is done. Home hides the live demand map and list; Opportunities hides live surge pricing and today's options. The only forward-looking card is the best window after the rest; the following days are open as usual for planning." /></TraceStep>
     </>);
   }
   if (state === 'start') {
@@ -1256,11 +1284,14 @@ const Trace = ({ snap, dec }) => {
     </>);
   }
   if (state === 'gold') {
-    const G = E.goldElig(snap), e = dec.gt;
+    const G = E.goldElig(snap), e = dec.gt, gs = dec.goldSafety;
     return (<>
-      <TraceStep title="1 · Safety check" chip="Clear" tone="neutral"><TraceRow mark="○" label="Hours online this shift" val={`${E.fmtH(wb.duty.hours)} of ${R.maxShift}h`} /></TraceStep>
+      <TraceStep title="1 · Safety check, projected to the end of the slot" chip={gs.status === 'clear' ? 'Clear' : 'Caution'} tone={gs.status === 'clear' ? 'neutral' : 'warn'}>
+        {gs.checks.map((c) => <TraceRow key={c.key} mark={c.hit ? '●' : '○'} label={c.label} val={c.val} />)}
+        {gs.msgs.length > 0 && <TraceRow label={`Caution informs, it does not block: ${gs.msgs.join(' ')}`} />}
+      </TraceStep>
       <TraceStep title="2 · Gold standard" chip="Met" tone="gold">{G.rows.map((x) => <TraceRow key={x.k} mark={x.ok ? '✓' : '✗'} label={`${x.k}, ${x.need}`} val={x.you} />)}</TraceStep>
-      <TraceStep title="3 · Event slot" chip="Fits" tone="gold"><TraceRow label={`${e.name}, ${E.fmtHour(e.a)} to ${E.fmtHour(e.b)}: projected hours stay under the ${R.maxShift}h limit`} val={`+${Math.round(e.prem * 100)}%`} /></TraceStep>
+      <TraceStep title="3 · Event slot" chip="Fits" tone="gold"><TraceRow label={`${e.name}, ${E.fmtHour(e.a)} to ${E.fmtHour(e.b)}: projected hours stay under the ${R.maxShift}h hard limit, so it is offered with the caution attached`} val={`+${Math.round(e.prem * 100)}%`} /></TraceStep>
       <TraceStep title="4 · Shown" chip="Gold offer" tone="gold"><TraceRow label="A Gold driver with a slot that fits gets the event offer in the top card, with tick to accept and X to decline." /></TraceStep>
     </>);
   }

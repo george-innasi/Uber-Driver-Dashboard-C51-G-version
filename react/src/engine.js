@@ -247,23 +247,34 @@ export function duty(snap){
   const until=capped?lastEnd+REST:null;
   return {recs:out,hours,since:out.length?out[0].s:null,lastEnd,capped,until,cool:capped&&snap.now<until};
 }
-export function wellbeing(snap){
-  const now=snap.now, nd=new Date(now), h=hourOf(nd);
-  const liveH=snap.live?agg(snap.live.recs).online:0;
-  const last24=snap.recs.filter(r=>r.s>=now-24*HOUR).reduce((a,r)=>a+r.dur,0);
-  const isLate=h>=RULES.lateStart||h<RULES.lateEnd;
-  const cons=consecutiveDays(snap);
-  const du=duty(snap);
-  const checks=[
-    {label:RULES.maxShift+' hrs online: forced offline',val:fmtH(Math.min(du.hours,RULES.maxShift)),hit:du.capped},
-    {label:'On for '+RULES.longDay+'+ hours this shift',val:fmtH(liveH),hit:liveH>=RULES.longDay},
-    {label:'Past 10 PM, 3+ hours in',val:fmtClock(nd),hit:isLate&&liveH>=RULES.lateMinHours},
-    {label:RULES.last24+'+ hours in the last 24',val:fmtH(last24),hit:last24>=RULES.last24},
-    {label:RULES.noRestDays+'+ days without a rest day',val:cons+(cons===1?' day':' days'),hit:cons>=RULES.noRestDays}
-  ];
-  return {liveH,last24,isLate,cons,checks,duty:du,tripped:checks.some(c=>c.hit)};
+/* C2: one safety check (metrics.safetyCheck) for the current moment and for
+   any offer projected forward. Hours count from the last 7-hour rest. */
+function safetyState(snap,du,cons){
+  const now=snap.now;
+  return {shiftH:du.hours,clockH:hourOf(new Date(now)),last24H:snap.recs.filter(r=>r.s>=now-24*HOUR).reduce((a,r)=>a+r.dur,0),daysInRow:cons};
 }
-/* expected $/online hr in a zone at a clock hour (hours past 24 roll into the next day) */
+const checkVal=(c,nd)=>c.key==='daysInRow'?c.days+(c.days===1?' day':' days'):c.key==='lateNight'?fmtClock(nd):fmtH(Math.min(c.hours,RULES.maxShift));
+export function wellbeing(snap){
+  const now=snap.now, nd=new Date(now);
+  const liveH=snap.live?agg(snap.live.recs).online:0;
+  const cons=consecutiveDays(snap), du=duty(snap), st=safetyState(snap,du,cons);
+  const S=M.safetyCheck(st);
+  const checks=S.checks.map(c=>({...c,val:checkVal(c,nd)}));
+  return {liveH,last24:st.last24H,cons,checks,duty:du,safety:S,state:st,tripped:S.status!=='clear'};
+}
+/* safety projected onto an event slot: stays online (or goes online) until the slot ends */
+export function slotSafety(snap,wb,e){
+  const nowH=hourOf(new Date(snap.now)), st=snap.live?wb.state:{...wb.state,clockH:Math.max(nowH,e.a)};
+  const S=M.safetyCheck(st,{startH:e.a,endH:e.b});
+  const hits=S.checks.filter(c=>c.hit&&!c.blocking), msgs=[];
+  hits.forEach(c=>{
+    if(c.key==='lateNight')msgs.push(`This slot runs past ${fmtHour(RULES.lateStart)}. You'll be ${fmtH(S.shiftH)} into your shift.`);
+    else if(c.key==='longShift'&&!hits.some(x=>x.key==='lateNight'))msgs.push(`You'll be ${fmtH(S.shiftH)} into your shift by ${fmtHour(e.b)}.`);
+    else if(c.key==='last24')msgs.push(`That makes ${fmtH(S.last24)} in the last 24 hours.`);
+    else if(c.key==='daysInRow')msgs.push(`This is day ${c.days} in a row without a rest day.`);
+  });
+  return {...S,checks:S.checks.map(c=>({...c,val:c.key==='daysInRow'?c.days+' days':c.key==='lateNight'?`${fmtHour(e.a)}–${fmtHour(e.b)}`:fmtH(c.key==='last24'?S.last24:Math.min(c.hours,RULES.maxShift))})),msgs};
+}
 export function rateAtFor(snap){
   const dow=new Date(snap.now).getDay(), boost=snap.m.boost||{};
   return (z,hh)=>expected(z,(dow+Math.floor(hh/24))%7,((hh%24)+24)%24).epoh*((boost[z]&&boost[z].m)||1);
@@ -298,9 +309,25 @@ export function goldEstimate(snap,e,cur){
 }
 export function decide(snap,claims={}){
   const wb=wellbeing(snap), op=opportunities(snap);
-  const gt=goldTop(snap,wb,claims);
-  const state=wb.duty.cool?'cool':(!snap.live?'start':(wb.tripped?'warn':(gt?'gold':(op.qualifies?'go':'calm'))));
-  return {wb,op,state,gt};
+  const week=weekData(snap,{wb});
+  /* C3: never prompt extra hours beyond the usual weekly range */
+  const overWeek=week.tot>=week.uHi;
+  const gt=overWeek?null:goldTop(snap,wb,claims);
+  const goldSafety=gt?slotSafety(snap,wb,gt):null;
+  const state=wb.duty.cool?'cool':(!snap.live?'start':(wb.tripped?'warn':(gt?'gold':(op.qualifies&&!overWeek?'go':'calm'))));
+  return {wb,op,state,gt,goldSafety,week,overWeek};
+}
+
+/* C1: during cool-down, the only forward-looking card: the best time block
+   after the rest ends, in a zone within the drive radius, typical $/hr. */
+export function bestAfterRest(snap,dec){
+  const du=dec.wb.duty;if(!du.cool)return null;
+  const end=new Date(du.until), day=sod(end), dow=day.getDay(), endH=hourOf(end), cur=dec.op.cur;
+  let best=null;
+  OPP_WINDOWS.filter(([a])=>a>=endH).forEach(([a,b])=>ZONES.filter(z=>travel(cur,z.id)<=RULES.maxDrive).forEach(z=>{
+    const w=windowStats(z.id,dow,a,b);if(!best||w.epoh>best.epoh)best={zone:z.id,a,b,epoh:w.epoh,mins:travel(cur,z.id)};
+  }));
+  return best&&{...best,day,restEnds:whenLabel(snap,du.until)};
 }
 
 /* A2: driving mode reads the active scenario. One number, one action, one status.
@@ -553,8 +580,7 @@ export function evBlock(e,snap,wb,G,isToday){
   if(isToday&&wb.duty.cool)return 'Resting until '+whenLabel(snap,wb.duty.until);
   if(isToday){
     if(wb.tripped)return 'Not offered late in a long shift';
-    const nowH=hourOf(new Date(snap.now)), hrs=wb.duty.hours+(snap.live?Math.max(0,e.b-nowH):Math.max(0,e.b-Math.max(nowH,e.a)));
-    if(hrs>RULES.maxShift+1e-6)return 'Passes your '+RULES.maxShift+'h limit';
+    if(slotSafety(snap,wb,e).status==='limit')return 'Passes your '+RULES.maxShift+'h limit';
   }
   return '';
 }
@@ -595,7 +621,7 @@ export function optionsForDay(snap,dec,dayIdx,claims){
   const G=goldElig(snap);
   EVENTS.filter(e=>e.day===evDay&&(!isToday||e.b>nowH)).forEach(e=>{
     const w=windowStats(e.zone,dow,e.a,e.b), st=claims[e.id], ge=goldEstimate({...snap,now:isToday?snap.now:at(day,0).getTime()},e,cur);
-    items.push({kind:'gold',a:e.a,e,typ:w.epoh,gold:w.epoh*(1+e.prem),ge,leftN:e.left-(st==='yes'?1:0),block:evBlock(e,snap,wb,G,isToday),st});
+    items.push({kind:'gold',a:e.a,e,typ:w.epoh,gold:w.epoh*(1+e.prem),ge,leftN:e.left-(st==='yes'?1:0),block:evBlock(e,snap,wb,G,isToday),safety:isToday&&!cool?slotSafety(snap,wb,e):null,st});
   });
   items.sort((x,y)=>x.a-y.a);
   return {days,today,day,isToday,cur,rightNow,items,G,cool,until:cool?whenLabel(snap,wb.duty.until):null};

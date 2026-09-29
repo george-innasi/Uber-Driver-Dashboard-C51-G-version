@@ -32,15 +32,16 @@ export async function pickTab(page, name) {
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const browser = await chromium.launch();
   const { page, errors } = await openApp(browser);
-  const phone = page.locator('main');
+  const { page: mob, errors: mErr } = await openApp(browser, 420); /* phone width: the app scrolls with the page */
+  await mob.addStyleTag({ content: 'nav[aria-label="Primary"],.pointer-events-none{display:none!important}' });
+  errors.push(...mErr);
   for (let i = 0; i < SCEN.length; i++) {
     const [id, day] = SCEN[i];
-    await pickScenario(page, i);
+    await pickScenario(page, i); await pickScenario(mob, i);
     for (const t of TABS) {
-      await pickTab(page, t);
-      await phone.evaluate((el) => { el.parentElement.scrollTop = 0; });
+      await pickTab(page, t); await pickTab(mob, t);
       await page.screenshot({ path: `${out}/${day}-${t}.png`, fullPage: false });
-      await phone.screenshot({ path: `${out}/${day}-${t}-full.png` });
+      await mob.locator('main').screenshot({ path: `${out}/${day}-${t}-full.png` });
     }
     const fab = page.locator('button', { hasText: 'Simulate driving' });
     if (await fab.count()) {
